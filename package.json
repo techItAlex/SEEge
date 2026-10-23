@@ -1,0 +1,27 @@
+{
+  "name": "seege",
+  "version": "1.0.0",
+  "description": "",
+  "main": "content.js",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/techItAlex/SEEge.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/techItAlex/SEEge/issues"
+  },
+  "homepage": "https://github.com/techItAlex/SEEge#readme",
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "firebase": "^13.1.0"
+  }
+}
