@@ -2,7 +2,7 @@
 {
   "manifest_version": 3,
   "name": "SEEge",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvMDY1XpBvn28GaNkFurgzzX9/A7RljwadNwBwIBNXb4jhWXtj/IcPUGOW9G4n2TEq3nLhxGb4s+SMt9zpZ+ILsjsx15i7gGSEuKB45nudM44u0vT9aQjjc50n2+ZRymjEGN86Xj1ZyuFB9xVoDisYsQgqX7qSxlDVzK/cYMYHiJbV9Hzfg76Ut/cUo7smpUyoDGwNygn9E0/HpgYEkSnq/hodDGXhzjRnQcev/ItUaIOWGTVQbp0oeXLWNO4NP/j67SEJ0P7PNJcKFJ16Dbcr6h1Hp1BLQK5PD7/SYq2oG7sSNamxbPVkdGuwW1jFJcoc2u3SZIASs1mYy6eZdjG2QIDAQAB",
   "description": "Class attendance and engagement monitor for Google Meet.",
   "permissions": [

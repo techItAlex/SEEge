@@ -1,6 +1,6 @@
-
-import { auth, db } from "./firebase.js";
+import { app, auth } from "./firebase.js";
 import {
+  getFirestore,
   doc,
   getDoc,
   addDoc,
@@ -10,6 +10,9 @@ import {
   where,
   onSnapshot,
 } from "firebase/firestore";
+
+const db = getFirestore(app);
+
 
 const $ = (id) => document.getElementById(id);
 

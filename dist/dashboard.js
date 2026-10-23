@@ -1339,11 +1339,11 @@
         event
       ));
     }
-    openPromise.then((db2) => {
+    openPromise.then((db) => {
       if (terminated)
-        db2.addEventListener("close", () => terminated());
+        db.addEventListener("close", () => terminated());
       if (blocking) {
-        db2.addEventListener("versionchange", (event) => blocking(event.oldVersion, event.newVersion, event));
+        db.addEventListener("versionchange", (event) => blocking(event.oldVersion, event.newVersion, event));
       }
     }).catch(() => {
     });
@@ -1528,11 +1528,11 @@
   function getDbPromise() {
     if (!dbPromise) {
       dbPromise = openDB(DB_NAME, DB_VERSION, {
-        upgrade: (db2, oldVersion) => {
+        upgrade: (db, oldVersion) => {
           switch (oldVersion) {
             case 0:
               try {
-                db2.createObjectStore(STORE_NAME);
+                db.createObjectStore(STORE_NAME);
               } catch (e2) {
                 console.warn(e2);
               }
@@ -1548,8 +1548,8 @@
   }
   async function readHeartbeatsFromIndexedDB(app2) {
     try {
-      const db2 = await getDbPromise();
-      const tx = db2.transaction(STORE_NAME);
+      const db = await getDbPromise();
+      const tx = db.transaction(STORE_NAME);
       const result = await tx.objectStore(STORE_NAME).get(computeKey(app2));
       await tx.done;
       return result;
@@ -1566,8 +1566,8 @@
   }
   async function writeHeartbeatsToIndexedDB(app2, heartbeatObject) {
     try {
-      const db2 = await getDbPromise();
-      const tx = db2.transaction(STORE_NAME, "readwrite");
+      const db = await getDbPromise();
+      const tx = db.transaction(STORE_NAME, "readwrite");
       const objectStore = tx.objectStore(STORE_NAME);
       await objectStore.put(heartbeatObject, computeKey(app2));
       await tx.done;
@@ -2898,8 +2898,8 @@
   function _getWorkerGlobalScope() {
     return _isWorker() ? self : null;
   }
-  function getObjectStore(db2, isReadWrite) {
-    return db2.transaction([DB_OBJECTSTORE_NAME], isReadWrite ? "readwrite" : "readonly").objectStore(DB_OBJECTSTORE_NAME);
+  function getObjectStore(db, isReadWrite) {
+    return db.transaction([DB_OBJECTSTORE_NAME], isReadWrite ? "readwrite" : "readonly").objectStore(DB_OBJECTSTORE_NAME);
   }
   function _deleteDatabase() {
     const request = indexedDB.deleteDatabase(DB_NAME2);
@@ -2912,39 +2912,39 @@
         reject(request.error);
       });
       request.addEventListener("upgradeneeded", () => {
-        const db2 = request.result;
+        const db = request.result;
         try {
-          db2.createObjectStore(DB_OBJECTSTORE_NAME, { keyPath: DB_DATA_KEYPATH });
+          db.createObjectStore(DB_OBJECTSTORE_NAME, { keyPath: DB_DATA_KEYPATH });
         } catch (e2) {
           reject(e2);
         }
       });
       request.addEventListener("success", async () => {
-        const db2 = request.result;
-        if (!db2.objectStoreNames.contains(DB_OBJECTSTORE_NAME)) {
-          db2.close();
+        const db = request.result;
+        if (!db.objectStoreNames.contains(DB_OBJECTSTORE_NAME)) {
+          db.close();
           await _deleteDatabase();
           resolve(await _openDatabase());
         } else {
-          resolve(db2);
+          resolve(db);
         }
       });
     });
   }
-  async function _putObject(db2, key, value) {
-    const request = getObjectStore(db2, true).put({
+  async function _putObject(db, key, value) {
+    const request = getObjectStore(db, true).put({
       [DB_DATA_KEYPATH]: key,
       value
     });
     return new DBPromise(request).toPromise();
   }
-  async function getObject(db2, key) {
-    const request = getObjectStore(db2, false).get(key);
+  async function getObject(db, key) {
+    const request = getObjectStore(db, false).get(key);
     const data = await new DBPromise(request).toPromise();
     return data === void 0 ? null : data.value;
   }
-  function _deleteObject(db2, key) {
-    const request = getObjectStore(db2, true).delete(key);
+  function _deleteObject(db, key) {
+    const request = getObjectStore(db, true).delete(key);
     return new DBPromise(request).toPromise();
   }
   function finalizeSignInTotpMfa(auth2, request) {
@@ -5779,7 +5779,7 @@
             this.isClosing = true;
             this.stopPolling();
             if (this.dbPromise) {
-              this.dbPromise.then((db2) => db2.close()).catch(() => {
+              this.dbPromise.then((db) => db.close()).catch(() => {
               });
               this.dbPromise = null;
             }
@@ -5810,8 +5810,8 @@
           let numAttempts = 0;
           while (true) {
             try {
-              const db2 = await this._openDb();
-              return await op(db2);
+              const db = await this._openDb();
+              return await op(db);
             } catch (e2) {
               if (numAttempts++ > _TRANSACTION_RETRY_COUNT) {
                 throw e2;
@@ -5820,8 +5820,8 @@
                 const dbPromise2 = this.dbPromise;
                 this.dbPromise = null;
                 try {
-                  const db2 = await dbPromise2;
-                  db2.close();
+                  const db = await dbPromise2;
+                  db.close();
                 } catch {
                 }
               }
@@ -5911,9 +5911,9 @@
             if (!indexedDB) {
               return false;
             }
-            await this._withRetries(async (db2) => {
-              await _putObject(db2, STORAGE_AVAILABLE_KEY, "1");
-              await _deleteObject(db2, STORAGE_AVAILABLE_KEY);
+            await this._withRetries(async (db) => {
+              await _putObject(db, STORAGE_AVAILABLE_KEY, "1");
+              await _deleteObject(db, STORAGE_AVAILABLE_KEY);
             });
             return true;
           } catch {
@@ -5930,19 +5930,19 @@
         }
         async _set(key, value) {
           return this._withPendingWrite(async () => {
-            await this._withRetries((db2) => _putObject(db2, key, value));
+            await this._withRetries((db) => _putObject(db, key, value));
             this.localCache[key] = value;
             return this.notifyServiceWorker(key);
           });
         }
         async _get(key) {
-          const obj = await this._withRetries((db2) => getObject(db2, key));
+          const obj = await this._withRetries((db) => getObject(db, key));
           this.localCache[key] = obj;
           return obj;
         }
         async _remove(key) {
           return this._withPendingWrite(async () => {
-            await this._withRetries((db2) => _deleteObject(db2, key));
+            await this._withRetries((db) => _deleteObject(db, key));
             delete this.localCache[key];
             return this.notifyServiceWorker(key);
           });
@@ -5952,8 +5952,8 @@
             return [];
           }
           try {
-            const result = await this._withRetries((db2) => {
-              const getAllRequest = getObjectStore(db2, false).getAll();
+            const result = await this._withRetries((db) => {
+              const getAllRequest = getObjectStore(db, false).getAll();
               return new DBPromise(getAllRequest).toPromise();
             });
             if (this.isClosing) {
@@ -6286,6 +6286,25 @@
   var init_index_esm6 = __esm({
     "node_modules/firebase/auth/web-extension/dist/esm/index.esm.js"() {
       init_web_extension_esm();
+    }
+  });
+
+  // src/firebase.js
+  var firebaseConfig, app, auth;
+  var init_firebase = __esm({
+    "src/firebase.js"() {
+      init_index_esm5();
+      init_index_esm6();
+      firebaseConfig = {
+        apiKey: "AIzaSyAcwNhDFq8JKy_Gsb0L87MqhjpXFBRlm0w",
+        authDomain: "seege-82ab8.firebaseapp.com",
+        projectId: "seege-82ab8",
+        storageBucket: "seege-82ab8.firebasestorage.app",
+        messagingSenderId: "529964064972",
+        appId: "1:529964064972:web:59d1028d844538923b2269"
+      };
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
     }
   });
 
@@ -7239,7 +7258,7 @@
         };
         var ab = l2.JSON.stringify;
         var cb = l2.JSON.parse;
-        var db2 = class {
+        var db = class {
           stringify(a) {
             return l2.JSON.stringify(a, void 0);
           }
@@ -7931,7 +7950,7 @@
           }
         }
         function Dc() {
-          this.g = new db2();
+          this.g = new db();
         }
         function Ec(a) {
           this.i = a.Sb || null;
@@ -31048,32 +31067,12 @@ This typically indicates that your device does not have a healthy Internet conne
     }
   });
 
-  // src/firebase.js
-  var firebaseConfig, app, auth, db;
-  var init_firebase = __esm({
-    "src/firebase.js"() {
-      init_index_esm5();
-      init_index_esm6();
-      init_index_esm8();
-      firebaseConfig = {
-        apiKey: "AIzaSyAcwNhDFq8JKy_Gsb0L87MqhjpXFBRlm0w",
-        authDomain: "seege-82ab8.firebaseapp.com",
-        projectId: "seege-82ab8",
-        storageBucket: "seege-82ab8.firebasestorage.app",
-        messagingSenderId: "529964064972",
-        appId: "1:529964064972:web:59d1028d844538923b2269"
-      };
-      app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-    }
-  });
-
   // src/dashboard.js
   var require_dashboard = __commonJS({
     "src/dashboard.js"() {
       init_firebase();
       init_index_esm8();
+      var db = getFirestore(app);
       var $ = (id) => document.getElementById(id);
       function parseCode(value) {
         return value.toLowerCase().match(/[a-z]{3}-[a-z]{4}-[a-z]{3}/)?.[0];
