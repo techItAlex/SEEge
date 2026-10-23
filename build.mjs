@@ -7,10 +7,11 @@ await cp("public", "dist", { recursive: true });
 
 await build({
   entryPoints: {
-    content: "src/content.js",
-    background: "src/background.js",
-    popup: "src/popup.js"
-  },
+  content: "src/content.js",
+  background: "src/background.js",
+  popup: "src/popup.js",
+  dashboard: "src/dashboard.js"
+},
   bundle: true,
   outdir: "dist",
   format: "iife",

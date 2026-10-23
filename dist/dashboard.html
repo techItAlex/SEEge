@@ -1,0 +1,97 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SEEge Dashboard</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 720px;
+      margin: 24px auto;
+      padding: 0 16px;
+      color: #1b1b1b;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin-top: 14px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    td, th {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h2>SEEge Dashboard</h2>
+  <p id="msg">Loading…</p>
+
+  <div id="app" hidden>
+    <p>Signed in as <b id="who"></b></p>
+
+    <h3>New class session</h3>
+    <form id="form">
+      <label>
+        Class name
+        <input id="className" required>
+      </label>
+
+      <label>
+        Meet link or code
+        <input id="meet" placeholder="abc-defg-hij" required>
+      </label>
+
+      <label>
+        Scheduled start
+        <input id="start" type="datetime-local" required>
+      </label>
+
+      <label>
+        Scheduled end
+        <input id="end" type="datetime-local" required>
+      </label>
+
+      <button type="submit">Create session</button>
+    </form>
+
+    <h3>Your sessions</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Class</th>
+          <th>Meet code</th>
+          <th>Start</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
