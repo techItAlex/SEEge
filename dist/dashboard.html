@@ -1,97 +1,58 @@
-
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SEEge Dashboard</title>
+  <meta name="color-scheme" content="light dark">
+  <title>SEEge | Teacher dashboard</title>
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      max-width: 720px;
-      margin: 24px auto;
-      padding: 0 16px;
-      color: #1b1b1b;
-    }
-
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: 600;
-    }
-
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      box-sizing: border-box;
-    }
-
-    button {
-      margin-top: 14px;
-      padding: 8px 16px;
-      cursor: pointer;
-    }
-
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 8px;
-    }
-
-    td, th {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
+    :root { color-scheme: light dark; --bg:#f4f6f8; --card:#fff; --ink:#17212b; --muted:#5e6a75; --line:#dce2e7; --blue:#1769aa; --green:#27864b; --amber:#a26300; --red:#ae3035; }
+    @media(prefers-color-scheme:dark){:root{--bg:#111820;--card:#1c2732;--ink:#e8edf2;--muted:#aab5bf;--line:#33414e;--blue:#79b9f2;--green:#6bd18c;--amber:#f4be60;--red:#ff8585}}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,sans-serif} main{max-width:1440px;margin:auto;padding:22px} h1,h2,h3{line-height:1.2} h1{margin:0;font-size:24px} h2{font-size:19px} h3{font-size:16px} button,input,textarea,select{font:inherit} button{border:0;border-radius:7px;padding:9px 13px;background:var(--blue);color:#fff;font-weight:650;cursor:pointer} button.secondary{background:transparent;color:var(--blue);border:1px solid var(--line)} button.danger{background:var(--red)} button:disabled{opacity:.55;cursor:wait} input,textarea,select{width:100%;padding:9px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)} label{display:block;font-weight:650;margin:10px 0 4px} .top,.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:16px}.muted,small{color:var(--muted)} .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.stat{padding:13px;border:1px solid var(--line);border-radius:9px}.stat b{display:block;font-size:24px;margin-top:5px}.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}.span2{grid-column:1/-1}.check{display:flex;gap:8px;align-items:flex-start;font-weight:400}.check input{width:auto;margin-top:4px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:980px}th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{font-size:12px;color:var(--muted);position:sticky;top:0;background:var(--card)}.badge{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:2px 7px;margin-right:3px;font-size:12px}.good{color:var(--green)}.late{color:var(--amber)}.bad{color:var(--red)}.focusbar{display:inline-block;width:75px;height:8px;background:var(--line);border-radius:5px;overflow:hidden;vertical-align:middle}.focusbar i{display:block;height:100%;background:var(--green)}.charts{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center}.donut{width:148px;height:148px;border-radius:50%;display:grid;place-items:center;margin:auto;background:conic-gradient(var(--green) 0deg,var(--green) 0deg,var(--amber) 0deg,var(--amber) 0deg,var(--blue) 0deg,var(--blue) 0deg,var(--line) 0deg)}.donut span{display:grid;place-items:center;width:92px;height:92px;background:var(--card);border-radius:50%;font-weight:700;text-align:center}.bars{height:150px;display:flex;align-items:end;gap:8px;border-bottom:1px solid var(--line)}.bars div{flex:1;background:var(--blue);min-width:12px;border-radius:4px 4px 0 0;position:relative}.bars small{position:absolute;top:100%;font-size:10px}.timeline{height:30px;position:relative;background:var(--line);border-radius:5px;margin:14px 0}.segment{position:absolute;top:0;height:100%;background:var(--green);border-radius:5px}.awaysegment{position:absolute;top:0;height:100%;background:var(--amber);opacity:.8}.notice{padding:10px 12px;border-left:3px solid var(--amber);background:color-mix(in srgb,var(--amber) 10%,var(--card));border-radius:5px}.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}.hidden{display:none!important} #message{margin:12px 0;color:var(--muted)} .sessions button{margin:3px}.session-selected{outline:2px solid var(--blue)} #student-detail{position:fixed;right:20px;top:20px;bottom:20px;z-index:5;width:min(440px,calc(100vw - 40px));overflow:auto;box-shadow:0 8px 40px #0003}
+    @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.two,.charts{grid-template-columns:1fr}} @media(max-width:580px){main{padding:12px}.formgrid{grid-template-columns:1fr}.span2{grid-column:auto}.top{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
 <body>
-  <h2>SEEge Dashboard</h2>
-  <p id="msg">Loading…</p>
-
-  <div id="app" hidden>
-    <p>Signed in as <b id="who"></b></p>
-
-    <h3>New class session</h3>
-    <form id="form">
-      <label>
-        Class name
-        <input id="className" required>
-      </label>
-
-      <label>
-        Meet link or code
-        <input id="meet" placeholder="abc-defg-hij" required>
-      </label>
-
-      <label>
-        Scheduled start
-        <input id="start" type="datetime-local" required>
-      </label>
-
-      <label>
-        Scheduled end
-        <input id="end" type="datetime-local" required>
-      </label>
-
-      <button type="submit">Create session</button>
-    </form>
-
-    <h3>Your sessions</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Class</th>
-          <th>Meet code</th>
-          <th>Start</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
-  </div>
-
-  <script src="dashboard.js"></script>
+<main>
+  <header class="top"><div><h1>SEEge teacher dashboard</h1><div id="who" class="muted">Connecting…</div></div><button id="refresh" class="secondary">Refresh</button></header>
+  <p id="message" role="status">Loading your account…</p>
+  <section id="app" class="hidden">
+    <div class="notice">Before creating a session, confirm that the class has been informed about SEEge monitoring. Students must sign in, provide their real name, and give consent before tracking begins.</div>
+    <section class="card">
+      <h2>Create class session</h2>
+      <form id="session-form" class="formgrid">
+        <div><label for="class-name">Class name</label><input id="class-name" required maxlength="120"></div>
+        <div><label for="meet-codes">Meet code(s), comma separated</label><input id="meet-codes" placeholder="abc-defg-hij" required></div>
+        <div><label for="scheduled-start">Scheduled start</label><input id="scheduled-start" type="datetime-local" required></div>
+        <div><label for="scheduled-end">Scheduled end</label><input id="scheduled-end" type="datetime-local" required></div>
+        <div><label for="late-minutes">Late threshold (minutes)</label><input id="late-minutes" type="number" min="0" max="180" value="10"></div>
+        <div><label for="present-percent">Present threshold (%)</label><input id="present-percent" type="number" min="1" max="100" value="75"></div>
+        <div><label for="participation-target">Participation target per hour</label><input id="participation-target" type="number" min="1" max="100" value="5"></div>
+        <div><label for="focus-screen">Focus weight: screen (%)</label><input id="focus-screen" type="number" min="0" max="100" value="60"></div>
+        <div><label for="focus-participation">Focus weight: participation (%)</label><input id="focus-participation" type="number" min="0" max="100" value="25"></div>
+        <div><label for="focus-stability">Focus weight: stability (%)</label><input id="focus-stability" type="number" min="0" max="100" value="15"></div>
+        <div><label for="roster-file">Roster CSV file (name,email)</label><input id="roster-file" type="file" accept=".csv,text/csv"></div>
+        <div class="span2"><label for="roster-text">Or paste roster (CSV: name,email)</label><textarea id="roster-text" rows="3" placeholder="Name,Email&#10;Alex Student,alex@example.com"></textarea></div>
+        <label class="check span2"><input id="informed" type="checkbox" required><span>I confirm students have been informed of the purpose, signals collected, and consent process.</span></label>
+        <div class="span2 actions"><button type="submit">Create session</button><span id="create-result" class="muted"></span></div>
+      </form>
+    </section>
+    <section class="card"><div class="top"><h2>Session history</h2><small>Ended sessions remain available for 90 days.</small></div><div id="sessions" class="sessions"></div></section>
+    <section class="card"><h2>Meet participation selectors</h2><p class="muted">Meet can change its page structure. Configure selectors here after checking the current Meet DOM. Empty or broken selectors are reported as unavailable; SEEge never stores message text.</p><form id="selector-form" class="formgrid"><div><label for="chat-selector">Own message send button selector</label><input id="chat-selector" placeholder='button[aria-label="Send"]'></div><div><label for="mic-selector">Microphone button selector</label><input id="mic-selector" placeholder='button[aria-label*="microphone" i]'></div><div class="span2"><label for="reaction-selectors">Reaction button selectors (one per line)</label><textarea id="reaction-selectors" rows="2" placeholder='button[aria-label*="reaction" i]'></textarea></div><div class="span2 actions"><button type="submit" class="secondary">Save selectors</button><span id="selector-result" class="muted"></span></div></form></section>
+    <section id="selected" class="hidden">
+      <section class="card"><div class="top"><div><h2 id="session-title">Session</h2><div id="session-meta" class="muted"></div></div><div class="actions"><button id="end-session" class="danger">End class now</button><button id="csv" class="secondary">Download full CSV</button><button id="email">Email report to my Gmail</button></div></div>
+        <div class="formgrid"><div><label for="actual-end">Actual end time (editable)</label><input id="actual-end" type="datetime-local"></div><div class="actions" style="align-items:end"><button id="save-end" class="secondary">Save end time</button><span id="signals" class="muted"></span></div></div>
+        <div id="formula" class="notice"></div>
+        <details><summary>Manage roster</summary><form id="roster-form" class="formgrid"><div><label for="roster-mode">Import mode</label><select id="roster-mode"><option value="merge">Add or update entries</option><option value="replace">Replace roster and remove removed students' session data</option></select></div><div><label for="roster-file-edit">Roster CSV file</label><input id="roster-file-edit" type="file" accept=".csv,text/csv"></div><div class="span2"><label for="roster-text-edit">Or paste CSV: name,email</label><textarea id="roster-text-edit" rows="3"></textarea></div><div class="span2 actions"><button type="submit" class="secondary">Save roster changes</button><span id="roster-result" class="muted"></span></div></form></details>
+      </section>
+      <section class="grid" id="summary"></section>
+      <section class="card charts"><div><h3>Attendance breakdown</h3><div class="donut" id="donut"><span id="donut-label"></span></div><p class="muted" id="legend"></p></div><div><h3>Focus score distribution</h3><div id="focus-bars" class="bars"></div><p class="muted">Scores: 0–19, 20–39, 40–59, 60–79, 80–100</p></div></section>
+      <section class="card"><div class="top"><h2>Students</h2><div class="row"><input id="search" placeholder="Search name or email" aria-label="Search students"><select id="status-filter" aria-label="Filter by status"><option value="all">All statuses</option><option>Present</option><option>Late</option><option>Partial</option><option>Absent</option><option>Upcoming</option></select></div></div><div class="tablewrap"><table><thead><tr><th><button class="secondary sort" data-sort="name">Name ↕</button></th><th><button class="secondary sort" data-sort="status">Status ↕</button></th><th><button class="secondary sort" data-sort="joinedAt">In ↕</button></th><th><button class="secondary sort" data-sort="leftAt">Out ↕</button></th><th><button class="secondary sort" data-sort="totalSeconds">Total ↕</button></th><th><button class="secondary sort" data-sort="rejoinCount">Rejoins ↕</button></th><th><button class="secondary sort" data-sort="awayCount">Away count ↕</button></th><th><button class="secondary sort" data-sort="chatCount">Chat ↕</button></th><th><button class="secondary sort" data-sort="reactionCount">Reactions ↕</button></th><th><button class="secondary sort" data-sort="micOpens">Mic opens ↕</button></th><th><button class="secondary sort" data-sort="focus">Focus ↕</button></th><th>Detection</th><th></th></tr></thead><tbody id="student-rows"></tbody></table></div></section>
+      <section class="card"><h2>Student data deletion requests</h2><div id="deletion-requests" class="muted">No requests loaded.</div></section>
+    </section>
+  </section>
+  <aside id="student-detail" class="card hidden"><div class="top"><h2 id="detail-name">Student details</h2><button id="close-detail" class="secondary">Close</button></div><div id="detail-content"></div></aside>
+</main>
+<script src="dashboard.js"></script>
 </body>
 </html>

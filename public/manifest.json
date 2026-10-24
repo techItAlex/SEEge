@@ -7,7 +7,8 @@
   "description": "Class attendance and engagement monitor for Google Meet.",
   "permissions": [
     "storage",
-    "identity"
+    "identity",
+    "alarms"
   ],
   "oauth2": {
     "client_id": "529964064972-ub7kok7i6vboqfb1o37p6g4g56dj6bn2.apps.googleusercontent.com",
@@ -24,6 +25,13 @@
   "background": {
     "service_worker": "background.js"
   },
+  "host_permissions": [
+    "https://firestore.googleapis.com/*",
+    "https://identitytoolkit.googleapis.com/*",
+    "https://securetoken.googleapis.com/*",
+    "https://firebaseinstallations.googleapis.com/*",
+    "https://gmail.googleapis.com/*"
+  ],
   "content_scripts": [
     {
       "matches": [

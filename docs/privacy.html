@@ -197,7 +197,7 @@
       This policy explains how SEEge handles information when you use
       the SEEge Chrome extension.
     </p>
-    <span class="updated">Last updated: October 22, 2026</span>
+    <span class="updated">Last updated: October 23, 2026</span>
 
     <article class="policy">
       <h2>1. About SEEge</h2>
@@ -207,30 +207,35 @@
         It is not affiliated with or endorsed by Google.
       </p>
 
-      <h2>2. Information the extension may process</h2>
+      <h2>2. Information SEEge collects</h2>
       <p>
         Depending on the features you use, SEEge may process the
         following information:
       </p>
       <ul>
         <li>
-          <strong>Meeting activity:</strong> events such as joining,
-          leaving, reconnecting, and detected periods of inactivity.
+          <strong>Identity and consent:</strong> your Google account email,
+          Firebase authentication identifier, real name you enter, and a
+          local record of your consent version and time.
         </li>
         <li>
-          <strong>Event timing:</strong> timestamps and calculated
-          durations associated with recorded activity.
+          <strong>Meeting activity:</strong> join, leave, and rejoin times;
+          time attended; periods when the Meet tab is hidden or unfocused;
+          and, when the Meet selectors work, counts of your chat sends,
+          reactions, microphone openings, and microphone-unmuted time.
         </li>
         <li>
-          <strong>Account information:</strong> if Google sign-in is
-          enabled, basic profile information such as your email address
-          and authentication identifier.
+          <strong>Class information:</strong> session dates, class name,
+          roster name and email, attendance metrics, and extension version.
         </li>
       </ul>
       <p>
-        SEEge is not designed to record meeting audio or video, read
-        private chat messages, or identify what participants say during
-        a meeting.
+        SEEge starts tracking only after consent, when you are signed in,
+        rostered, and on a Google Meet code linked to a live class. It does
+        not run on other websites. SEEge never stores chat text, audio,
+        video, screenshots, or screen content. Participation signals depend
+        on Meet page selectors and may be unavailable. Focus is an
+        indicator, not proof of attention.
       </p>
 
       <h2>3. How information is used</h2>
@@ -244,10 +249,15 @@
 
       <h2>4. Storage and sharing</h2>
       <p>
-        The extension may use browser storage and, if implemented and
-        enabled, Firebase services to support its features. The exact
-        information stored remotely depends on the functionality
-        deployed in the version you use.
+        Consent and your real name are held in local extension storage.
+        Session activity and roster entries are stored in the project's
+        Firebase Authentication and Cloud Firestore services. The teacher
+        who owns a class can view its roster and student activity. The
+        included Firestore rules are designed to prevent other students
+        reading your activity; the project owner must deploy those rules
+        before collecting real class data. If the teacher sends a report,
+        Gmail receives the report and CSV attachment at the teacher's own
+        account.
       </p>
       <p>
         SEEge does not sell personal information. Information is not
@@ -278,12 +288,18 @@
 
       <h2>7. Data retention and deletion</h2>
       <p>
-        Information may remain in browser storage or a connected service
-        for as long as needed for the features you use. Available
-        deletion and retention controls depend on the implemented
-        version. If you need help with information associated with
-        SEEge, use the project repository linked below to contact
-        the developer.
+        Session data is configured for deletion 90 days after the session
+        ends. The extension performs this cleanup when Chrome is running
+        and the teacher is signed in; because the project uses no paid
+        server-side scheduler, data can remain longer if the teacher's
+        extension is not run after the retention date. Students can use the
+        extension popup to request deletion. On request, SEEge clears its
+        local activity buffer and pending upload for that session and stops
+        monitoring that class. The teacher can approve the request in the
+        dashboard, which removes that student's activity and roster entry
+        from Firestore. The signed-in email, name, and consent record remain
+        in local extension storage; removing the extension's local data clears
+        those values. Contact the developer for other privacy requests.
       </p>
 
       <h2>8. Security</h2>
@@ -310,11 +326,14 @@
 
       <h2>11. Contact</h2>
       <p>
-        For privacy questions or requests, visit the
+        The project maintainer, Alex, is the contact for this student
+        project. For questions about what information is held, or to request
+        access, correction, withdrawal of consent, or deletion, visit the
         <a href="https://github.com/techItAlex/SEEge">
           SEEge GitHub repository
         </a>
-        and contact the project maintainer.
+        and contact the project maintainer. This project has not had a legal
+        review of its privacy notice or data handling.
       </p>
 
       <div class="notice">

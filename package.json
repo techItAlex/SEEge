@@ -4,7 +4,9 @@
   "description": "",
   "main": "content.js",
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "test": "node --test",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-seege \"node --test tests/firestore-rules.emulator.mjs\""
   },
   "repository": {
     "type": "git",
@@ -19,7 +21,9 @@
   },
   "homepage": "https://github.com/techItAlex/SEEge#readme",
   "devDependencies": {
-    "esbuild": "^0.28.2"
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "esbuild": "^0.28.2",
+    "firebase-tools": "^15.34.1"
   },
   "dependencies": {
     "firebase": "^13.1.0"

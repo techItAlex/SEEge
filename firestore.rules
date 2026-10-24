@@ -1,0 +1,207 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null && request.auth.token.email is string; }
+    function email() { return request.auth.token.email.lower(); }
+    function isTeacher() {
+      return signedIn() && exists(/databases/$(database)/documents/teachers/$(email()));
+    }
+    function ownsSession() {
+      return isTeacher() && resource.data.teacherEmail == email();
+    }
+    function sessionPath(sessionId) { return /databases/$(database)/documents/sessions/$(sessionId); }
+    function ownStudent(studentEmail) { return signedIn() && email() == studentEmail; }
+    function rosterPath(sessionId, studentEmail) {
+      return /databases/$(database)/documents/sessions/$(sessionId)/roster/$(studentEmail);
+    }
+    function meetIndexPath(meetCode) { return /databases/$(database)/documents/meetSessions/$(meetCode); }
+    function ownsSessionById(sessionId) {
+      return isTeacher() && get(sessionPath(sessionId)).data.teacherEmail == email();
+    }
+    function validStudentData(studentEmail) {
+      return request.resource.data.keys().hasOnly([
+          'email', 'uid', 'name', 'consentAt', 'visits', 'awayCount', 'awaySeconds', 'chatCount',
+          'reactionCount', 'micOpens', 'micUnmutedSeconds', 'signalAvailability',
+          'awayPeriods', 'currentlyAway', 'lastHeartbeat', 'extensionVersion', 'consentVersion', 'updatedAt'
+        ])
+        && request.resource.data.email == studentEmail
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.consentAt is timestamp
+        && request.resource.data.consentVersion is string
+        && request.resource.data.consentVersion.size() > 0
+        && request.resource.data.consentVersion.size() <= 64
+        && request.resource.data.visits is list
+        && request.resource.data.visits.size() <= 500
+        && request.resource.data.awayPeriods is list
+        && request.resource.data.awayPeriods.size() <= 500
+        && request.resource.data.awayCount is int
+        && request.resource.data.awayCount >= 0
+        && request.resource.data.awayCount <= 100000
+        && request.resource.data.awaySeconds is int
+        && request.resource.data.awaySeconds >= 0
+        && request.resource.data.awaySeconds <= 86400
+        && request.resource.data.chatCount is int
+        && request.resource.data.chatCount >= 0
+        && request.resource.data.chatCount <= 100000
+        && request.resource.data.reactionCount is int
+        && request.resource.data.reactionCount >= 0
+        && request.resource.data.reactionCount <= 100000
+        && request.resource.data.micOpens is int
+        && request.resource.data.micOpens >= 0
+        && request.resource.data.micOpens <= 100000
+        && request.resource.data.micUnmutedSeconds is int
+        && request.resource.data.micUnmutedSeconds >= 0
+        && request.resource.data.micUnmutedSeconds <= 86400
+        && request.resource.data.signalAvailability is map
+        && request.resource.data.signalAvailability.keys().hasOnly(['chat', 'reactions', 'mic'])
+        && request.resource.data.signalAvailability.chat is bool
+        && request.resource.data.signalAvailability.reactions is bool
+        && request.resource.data.signalAvailability.mic is bool
+        && request.resource.data.currentlyAway is bool
+        && request.resource.data.lastHeartbeat is timestamp
+        && request.resource.data.extensionVersion is string
+        && request.resource.data.updatedAt is timestamp;
+    }
+    function validMeetIndex(meetCode) {
+      return isTeacher()
+        && request.resource.data.keys().hasOnly(['meetCode', 'sessionId', 'teacherEmail', 'status', 'actualEnd'])
+        && request.resource.data.keys().hasAll(['meetCode', 'sessionId', 'teacherEmail', 'status', 'actualEnd'])
+        && request.resource.data.teacherEmail == email()
+        && request.resource.data.meetCode == meetCode
+        && request.resource.data.sessionId is string
+        && getAfter(sessionPath(request.resource.data.sessionId)).data.teacherEmail == email()
+        && meetCode in getAfter(sessionPath(request.resource.data.sessionId)).data.meetCodes
+        && request.resource.data.status in ['scheduled', 'live', 'ended']
+        && request.resource.data.status == getAfter(sessionPath(request.resource.data.sessionId)).data.status
+        && request.resource.data.actualEnd == getAfter(sessionPath(request.resource.data.sessionId)).data.actualEnd
+        && (request.resource.data.actualEnd == null || request.resource.data.actualEnd is timestamp)
+        && (request.resource.data.status != 'ended' || request.resource.data.actualEnd is timestamp);
+    }
+
+    match /teachers/{teacherEmail} {
+      allow read: if signedIn() && email() == teacherEmail;
+      allow write: if false;
+    }
+
+    match /sessions/{sessionId} {
+      allow get: if ownsSession() || (signedIn()
+        && resource.data.status in ['live', 'ended']
+        && exists(rosterPath(sessionId, email())));
+      allow list: if ownsSession();
+      allow create: if isTeacher()
+        && request.resource.data.teacherEmail == email()
+        && request.resource.data.status in ['scheduled', 'live', 'ended']
+        && request.resource.data.className is string
+        && request.resource.data.className.size() > 0
+        && request.resource.data.meetCodes is list
+        && request.resource.data.meetCodes.size() > 0
+        && request.resource.data.scheduledStart is timestamp
+        && request.resource.data.scheduledEnd is timestamp
+        && request.resource.data.scheduledEnd > request.resource.data.scheduledStart
+        && request.resource.data.thresholds is map
+        && (request.resource.data.status != 'ended' || request.resource.data.actualEnd is timestamp);
+      allow update: if ownsSession()
+        && request.resource.data.teacherEmail == resource.data.teacherEmail
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'className', 'meetCodes', 'scheduledStart', 'scheduledEnd', 'actualEnd',
+          'status', 'thresholds', 'updatedAt', 'meetIntervals'
+        ])
+        && request.resource.data.status in ['scheduled', 'live', 'ended']
+        && (request.resource.data.status != 'ended' || request.resource.data.actualEnd is timestamp);
+      allow delete: if ownsSession();
+
+      match /roster/{studentEmail} {
+        allow read: if ownsSessionById(sessionId) || ownStudent(studentEmail);
+        allow create, update: if isTeacher()
+          && get(sessionPath(sessionId)).data.teacherEmail == email()
+          && request.resource.data.keys().hasOnly(['name', 'email'])
+          && request.resource.data.email == studentEmail
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0;
+        allow delete: if ownsSessionById(sessionId);
+      }
+
+      match /students/{studentEmail} {
+        allow read: if ownsSessionById(sessionId) || ownStudent(studentEmail);
+        allow create: if ownStudent(studentEmail)
+          && exists(rosterPath(sessionId, studentEmail))
+          && get(sessionPath(sessionId)).data.status == 'live'
+          && validStudentData(studentEmail);
+        allow update: if ownStudent(studentEmail)
+          && exists(rosterPath(sessionId, studentEmail))
+          && get(sessionPath(sessionId)).data.status == 'live'
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.email == resource.data.email
+          && (!('consentAt' in resource.data) || request.resource.data.consentAt == resource.data.consentAt)
+          && request.resource.data.consentVersion == resource.data.consentVersion
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'email', 'uid', 'name', 'consentAt', 'visits', 'awayCount', 'awaySeconds', 'chatCount',
+            'reactionCount', 'micOpens', 'micUnmutedSeconds', 'signalAvailability',
+            'awayPeriods', 'currentlyAway', 'lastHeartbeat', 'extensionVersion', 'consentVersion', 'updatedAt'
+          ])
+          && validStudentData(studentEmail);
+        allow delete: if ownStudent(studentEmail) || ownsSessionById(sessionId);
+      }
+
+      match /deletionRequests/{requestId} {
+        allow get: if ownsSessionById(sessionId) || (signedIn() && resource.data.email == email());
+        allow list: if ownsSessionById(sessionId);
+        allow create: if signedIn()
+          && exists(sessionPath(sessionId))
+          && exists(rosterPath(sessionId, email()))
+          && request.resource.data.sessionId == sessionId
+          && request.resource.data.email == email()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.status == 'pending'
+          && request.resource.data.createdAt is timestamp
+          && request.resource.data.keys().hasOnly(['sessionId', 'email', 'uid', 'status', 'createdAt']);
+        allow update, delete: if ownsSessionById(sessionId);
+      }
+    }
+
+    match /meetSessions/{meetCode} {
+      allow get: if signedIn() && (!exists(meetIndexPath(meetCode)) || (resource.data.keys().hasOnly([
+          'meetCode', 'sessionId', 'teacherEmail', 'status', 'actualEnd'
+        ]) && resource.data.keys().hasAll([
+          'meetCode', 'sessionId', 'teacherEmail', 'status', 'actualEnd'
+        ]) && resource.data.meetCode == meetCode
+        && ((resource.data.status == 'live'
+            && ((isTeacher() && resource.data.teacherEmail == email())
+              || exists(rosterPath(resource.data.sessionId, email()))))
+          || (isTeacher() && resource.data.teacherEmail == email()))));
+      allow list: if false;
+      allow create: if validMeetIndex(meetCode);
+      allow update: if validMeetIndex(meetCode)
+        && ((resource.data.teacherEmail == email()
+            && resource.data.sessionId == request.resource.data.sessionId)
+          || get(sessionPath(resource.data.sessionId)).data.status == 'ended');
+      allow delete: if isTeacher() && resource.data.teacherEmail == email();
+    }
+
+    match /config/{configId} {
+      allow get: if signedIn() && configId == 'meetSelectors';
+      allow list: if false;
+      allow create, update: if configId == 'meetSelectors'
+        && isTeacher()
+        && request.resource.data.keys().hasOnly([
+          'chatSendSelector', 'microphoneSelector', 'reactionSelectors', 'updatedAt', 'updatedBy'
+        ])
+        && request.resource.data.keys().hasAll([
+          'chatSendSelector', 'microphoneSelector', 'reactionSelectors', 'updatedAt', 'updatedBy'
+        ])
+        && request.resource.data.chatSendSelector is string
+        && request.resource.data.chatSendSelector.size() <= 500
+        && request.resource.data.microphoneSelector is string
+        && request.resource.data.microphoneSelector.size() <= 500
+        && request.resource.data.reactionSelectors is list
+        && request.resource.data.reactionSelectors.size() <= 50
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedBy == email();
+      allow delete: if false;
+    }
+
+  }
+}

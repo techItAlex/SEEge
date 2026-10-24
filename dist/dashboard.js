@@ -17311,6 +17311,44 @@
     } else a = null, u = _2.fieldTransforms;
     return new ParsedSetData(new ObjectValue(o), a, u);
   }
+  function __PRIVATE_parseUpdateData(e2, t, n, r) {
+    const i2 = e2.createContext(1, t, n);
+    __PRIVATE_validatePlainObject("Data must be an object, but it was:", i2, r);
+    const s = [], _2 = ObjectValue.empty();
+    forEach(r, ((e3, r2) => {
+      const o2 = __PRIVATE_fieldPathFromDotSeparatedString(t, e3, n);
+      r2 = getModularInstance(r2);
+      const a = i2.childContextForFieldPath(o2);
+      if (r2 instanceof __PRIVATE_DeleteFieldValueImpl)
+        s.push(o2);
+      else {
+        const e4 = __PRIVATE_parseData(r2, a);
+        null != e4 && (s.push(o2), _2.set(o2, e4));
+      }
+    }));
+    const o = new FieldMask(s);
+    return new ParsedUpdateData(_2, o, i2.fieldTransforms);
+  }
+  function __PRIVATE_parseUpdateVarargs(e2, t, n, r, i2, s) {
+    const _2 = e2.createContext(1, t, n), o = [K(t, r, n)], a = [i2];
+    if (s.length % 2 != 0) throw new Q(z.INVALID_ARGUMENT, `Function ${t}() needs to be called with an even number of arguments that alternate between field names and values.`);
+    for (let e3 = 0; e3 < s.length; e3 += 2) o.push(K(t, s[e3])), a.push(s[e3 + 1]);
+    const u = [], c = ObjectValue.empty();
+    for (let e3 = o.length - 1; e3 >= 0; --e3) if (!__PRIVATE_fieldMaskContains(u, o[e3])) {
+      const t2 = o[e3];
+      let n2 = a[e3];
+      n2 = getModularInstance(n2);
+      const r2 = _2.childContextForFieldPath(t2);
+      if (n2 instanceof __PRIVATE_DeleteFieldValueImpl)
+        u.push(t2);
+      else {
+        const e4 = __PRIVATE_parseData(n2, r2);
+        null != e4 && (u.push(t2), c.set(t2, e4));
+      }
+    }
+    const l2 = new FieldMask(u);
+    return new ParsedUpdateData(c, l2, _2.fieldTransforms);
+  }
   function __PRIVATE_parseQueryValue(e2, t, n, r = false) {
     return __PRIVATE_parseData(n, e2.createContext(r ? 4 : 3, t));
   }
@@ -17930,6 +17968,26 @@
   }
   function __PRIVATE_targetOrPipelineEqual(e2, t) {
     return e2 instanceof CorePipeline && t instanceof CorePipeline ? __PRIVATE_pipelineEq(e2, t) : !(e2 instanceof CorePipeline && !(t instanceof CorePipeline) || !(e2 instanceof CorePipeline) && t instanceof CorePipeline) && __PRIVATE_targetEquals(e2, t);
+  }
+  function __PRIVATE_toCorePipeline(e2, t) {
+    const n = (function __PRIVATE_rewriteStages(e3) {
+      let t2 = false;
+      const n2 = [];
+      for (const r of e3)
+        if (r instanceof F)
+          if (t2 = true, r.orderings.some(((e4) => e4.expr instanceof Field && e4.expr.fieldName === Fe))) n2.push(r);
+          else {
+            const e4 = r.orderings.map(((e5) => e5));
+            e4.push(i(Fe).ascending()), n2.push(new F(e4, {}));
+          }
+        else r instanceof w ? (t2 || (n2.push(new F([i(Fe).ascending()], {})), t2 = true), n2.push(r)) : n2.push(r);
+      return t2 || n2.push(new F([i(Fe).ascending()], {})), n2;
+    })(e2.stages);
+    if (e2.userDataReader) {
+      const t2 = e2.userDataReader.createContext(3, "toCorePipeline");
+      n.forEach(((e3) => e3._readUserData(t2)));
+    }
+    return new CorePipeline(e2.userDataReader.serializer, n, t);
   }
   function __PRIVATE_encodeResourcePath(e2) {
     let t = "";
@@ -19099,6 +19157,21 @@
       return __PRIVATE_eventManagerListen(e3, _2);
     })(await __PRIVATE_getEventManager(e2), e2.asyncQueue, t, n, r))), r.promise;
   }
+  function __PRIVATE_firestoreClientGetDocumentsViaSnapshotListener(e2, t, n = {}) {
+    const r = new __PRIVATE_Deferred();
+    return e2.asyncQueue.enqueueAndForget((async () => (function __PRIVATE_executeQueryViaSnapshotListener(e3, t2, n2, r2, i2) {
+      const s = new __PRIVATE_AsyncObserver({
+        next: (n3) => {
+          s.Bu(), t2.enqueueAndForget((() => __PRIVATE_eventManagerUnlisten(e3, _2))), n3.fromCache && "server" === r2.source ? i2.reject(new Q(z.UNAVAILABLE, 'Failed to get documents from server. (However, these documents may exist in the local cache. Run again without setting source to "server" to retrieve the cached documents.)')) : i2.resolve(n3);
+        },
+        error: (e4) => i2.reject(e4)
+      }), _2 = new __PRIVATE_QueryListener(n2 instanceof __PRIVATE_RealtimePipeline ? __PRIVATE_toCorePipeline(n2) : n2, s, {
+        includeMetadataChanges: true,
+        waitForSyncWhenOnline: true
+      });
+      return __PRIVATE_eventManagerListen(e3, _2);
+    })(await __PRIVATE_getEventManager(e2), e2.asyncQueue, t, n, r))), r.promise;
+  }
   function __PRIVATE_firestoreClientWrite(e2, t) {
     const n = new __PRIVATE_Deferred();
     return e2.asyncQueue.enqueueAndForget((async () => __PRIVATE_syncEngineWrite(await __PRIVATE_getSyncEngine(e2), t, n))), n.promise;
@@ -19153,7 +19226,7 @@
         });
     }
   }
-  var xe, ve, __PRIVATE_AutoId, De, Ce, SortedMap, SortedMapIterator, LLRBNode, SortedSet, SortedSetIterator, z, Q, Fe, BasePath, ResourcePath, Oe, Me, FieldMask, DocumentKey, Ne, Be, Timestamp, __PRIVATE_Base64DecodeError, ByteString, Le, $e, Ue, ke, Qe, DatabaseInfo, qe, DatabaseId, __PRIVATE_QuadrupleBuilder, Ke, We, Ge, je, ze, He, __PRIVATE_Quadruple, Je, Ye, Ze, Xe, et, tt, nt, rt, it, st, _t, ot, at, ut, ct, lt, Et, ht, Tt, Pt, It, Rt, At, Vt, dt, ft, mt, pt, gt, yt, wt, bt, ObjectValue, TransformOperation, __PRIVATE_ServerTimestampTransform, __PRIVATE_ArrayUnionTransformOperation, __PRIVATE_ArrayRemoveTransformOperation, __PRIVATE_NumericTransformOperation, __PRIVATE_NumericIncrementTransformOperation, __PRIVATE_NumericMinimumTransformOperation, __PRIVATE_NumericMaximumTransformOperation, MutationResult, Precondition, Mutation, __PRIVATE_SetMutation, __PRIVATE_PatchMutation, __PRIVATE_DeleteMutation, __PRIVATE_VerifyMutation, Bound, Filter, FieldFilter, CompositeFilter, __PRIVATE_KeyFieldFilter, __PRIVATE_KeyFieldInFilter, __PRIVATE_KeyFieldNotInFilter, __PRIVATE_ArrayContainsFilter, __PRIVATE_InFilter, __PRIVATE_NotInFilter, __PRIVATE_ArrayContainsAnyFilter, OrderBy, SnapshotVersion, MutableDocument, St, FieldIndex, IndexOffset, __PRIVATE_TargetImpl, __PRIVATE_QueryImpl, ExistenceFilter, xt, vt, ObjectMap, Dt, Ct, Ft, Ot, Mt, Nt, Bt, BloomFilter, __PRIVATE_BloomFilterError, RemoteEvent, TargetChange, __PRIVATE_DocumentWatchChange, __PRIVATE_ExistenceFilterChange, __PRIVATE_WatchTargetChange, __PRIVATE_TargetState, Lt, __PRIVATE_WatchChangeAggregator, $t, Ut, kt, JsonProtoSerializer, BsonObjectId, BsonTimestamp, Bytes, Decimal128Value, FieldPath2, FieldValue, GeoPoint, Int32Value, MaxKey, MinKey, User, __PRIVATE_Deferred, __PRIVATE_OAuthToken, __PRIVATE_EmptyAuthCredentialsProvider, __PRIVATE_EmulatorAuthCredentialsProvider, __PRIVATE_FirebaseAuthCredentialsProvider, __PRIVATE_FirstPartyToken, __PRIVATE_FirstPartyAuthCredentialsProvider, AppCheckToken, __PRIVATE_FirebaseAppCheckTokenProvider, __PRIVATE_NoopConnectivityMonitor, Qt, __PRIVATE_BrowserConnectivityMonitor, qt, Kt, Wt, __PRIVATE_RestConnection, __PRIVATE_StreamBridge, Gt, __PRIVATE_unguardedEventListen, __PRIVATE_WebChannelConnection, __PRIVATE_ExponentialBackoff, jt, __PRIVATE_PersistentStream, __PRIVATE_PersistentListenStream, __PRIVATE_PersistentWriteStream, Datastore, __PRIVATE_DatastoreImpl, zt, Ht, Jt, Yt, LruParams, __PRIVATE_ListenSequence, Zt, PersistenceTransaction, PersistencePromise, tn, nn, __PRIVATE_RollingSequenceNumberBuffer, __PRIVATE_LruScheduler, __PRIVATE_LruGarbageCollectorImpl, rn, sn, FirestoreSettingsImpl, _n, Query, aa, na, RegexValue, VectorValue, on, ParsedSetData, ParseContextImpl, UserDataReader, an, OptionsUtil, C, _, AliasedAggregate, AliasedExpression, __PRIVATE_ListOfExprs, Field, Constant, l, BooleanExpression, __PRIVATE_BooleanFunctionExpression, __PRIVATE_BooleanConstant, __PRIVATE_BooleanField, Ordering, Stage, e, x, f, X, Y, Z, sa, p, w, b, h, F, I, CorePipeline, __PRIVATE_EvaluateResult, __PRIVATE_CoreField, __PRIVATE_CoreConstant, __PRIVATE_CoreListOfExprs, un, cn, __PRIVATE_BigIntOrDoubleArithmetics, __PRIVATE_CoreAdd, __PRIVATE_CoreSubtract, __PRIVATE_CoreMultiply, __PRIVATE_CoreDivide, __PRIVATE_CoreMod, __PRIVATE_CoreAnd, __PRIVATE_CoreNot, __PRIVATE_CoreOr, __PRIVATE_CoreXor, __PRIVATE_CoreEqAny, __PRIVATE_CoreNotEqAny, __PRIVATE_CoreIsNan, __PRIVATE_CoreIsNotNan, __PRIVATE_CoreIsNull, __PRIVATE_CoreIsNotNull, __PRIVATE_CoreIsError, __PRIVATE_CoreExists, __PRIVATE_CoreCond, __PRIVATE_CoreLogicalMaximum, __PRIVATE_CoreLogicalMinimum, __PRIVATE_ComparisonBase, __PRIVATE_CoreEq, __PRIVATE_CoreNeq, __PRIVATE_CoreLt, __PRIVATE_CoreLte, __PRIVATE_CoreGt, __PRIVATE_CoreGte, __PRIVATE_CoreArrayConcat, __PRIVATE_CoreArrayReverse, __PRIVATE_CoreArrayContains, __PRIVATE_CoreArrayContainsAll, __PRIVATE_CoreArrayContainsAny, __PRIVATE_CoreArrayLength, __PRIVATE_CoreArrayElement, __PRIVATE_CoreReverse, __PRIVATE_CoreReplaceFirst, __PRIVATE_CoreReplaceAll, __PRIVATE_CoreCharLength, __PRIVATE_CoreByteLength, __PRIVATE_StringSearchFunctionBase, __PRIVATE_CoreLike, __PRIVATE_CoreRegexContains, __PRIVATE_CoreRegexMatch, __PRIVATE_CoreStrContains, __PRIVATE_CoreStartsWith, __PRIVATE_CoreEndsWith, __PRIVATE_CoreToLower, __PRIVATE_CoreToUpper, __PRIVATE_CoreTrim, __PRIVATE_CoreStrConcat, __PRIVATE_CoreMapGet, __PRIVATE_DistanceBase, __PRIVATE_CoreCosineDistance, __PRIVATE_CoreDotProduct, __PRIVATE_CoreEuclideanDistance, __PRIVATE_CoreVectorLength, En, hn, Tn, Pn, In, Rn, An, Vn, __PRIVATE_UnixToTimestamp, __PRIVATE_CoreUnixMicrosToTimestamp, __PRIVATE_CoreUnixMillisToTimestamp, __PRIVATE_CoreUnixSecondsToTimestamp, __PRIVATE_TimestampToUnix, __PRIVATE_CoreTimestampToUnixMicros, __PRIVATE_CoreTimestampToUnixMillis, __PRIVATE_CoreTimestampToUnixSeconds, __PRIVATE_TimestampArithmetic, __PRIVATE_CoreTimestampAdd, __PRIVATE_CoreTimestampSub, MutationBatch, MutationBatchResult, dn, fn, mn, gn, wn, Dn, Cn, Ln, Un, qn, zn, Hn, Yn, Xn, tr, rr, ar, Er, Ir, mr, gr, yr, wr, br, Sr, vr, Overlay, TargetData, __PRIVATE_LocalSerializer, __PRIVATE_FirestoreIndexValueWriter, __PRIVATE_MemoryIndexManager, __PRIVATE_MemoryCollectionParentIndex, Or, __PRIVATE_TargetIdGenerator, RemoteDocumentChangeBuffer, OverlayedDocument, LocalDocumentsView, __PRIVATE_MemoryBundleCache, __PRIVATE_MemoryDocumentOverlayCache, __PRIVATE_MemoryGlobalsCache, __PRIVATE_ReferenceSet, __PRIVATE_DocReference, __PRIVATE_MemoryMutationQueue, __PRIVATE_MemoryRemoteDocumentCacheImpl, __PRIVATE_MemoryRemoteDocumentChangeBuffer, __PRIVATE_MemoryTargetCache, __PRIVATE_MemoryPersistence, __PRIVATE_MemoryTransaction, __PRIVATE_MemoryEagerDelegate, __PRIVATE_MemoryLruDelegate, __PRIVATE_LocalViewChanges, QueryContext, __PRIVATE_QueryEngine, Ur, kr, __PRIVATE_LocalStoreImpl, __PRIVATE_OnlineStateTracker, Qr, __PRIVATE_RemoteStoreImpl, __PRIVATE_AsyncObserver, DelayedOperation, __PRIVATE_LocalClientState, __PRIVATE_MemorySharedClientState, DocumentSet, __PRIVATE_DocumentChangeSet, ViewSnapshot, __PRIVATE_QueryListenersInfo, __PRIVATE_EventManagerImpl, zr, __PRIVATE_QueryListener, __PRIVATE_AddedLimboDocument, __PRIVATE_RemovedLimboDocument, __PRIVATE_View, Hr, __PRIVATE_QueryView, LimboResolution, __PRIVATE_SyncEngineImpl, __PRIVATE_MemoryOfflineComponentProvider, __PRIVATE_LruGcMemoryOfflineComponentProvider, OnlineComponentProvider, Jr, FirestoreClient, Yr, Zr, AbstractUserDataWriter, Xr, __PRIVATE_AsyncQueueImpl, pa, ua, SnapshotMetadata, DocumentSnapshot2, QueryDocumentSnapshot2, QuerySnapshot;
+  var xe, ve, __PRIVATE_AutoId, De, Ce, SortedMap, SortedMapIterator, LLRBNode, SortedSet, SortedSetIterator, z, Q, Fe, BasePath, ResourcePath, Oe, Me, FieldMask, DocumentKey, Ne, Be, Timestamp, __PRIVATE_Base64DecodeError, ByteString, Le, $e, Ue, ke, Qe, DatabaseInfo, qe, DatabaseId, __PRIVATE_QuadrupleBuilder, Ke, We, Ge, je, ze, He, __PRIVATE_Quadruple, Je, Ye, Ze, Xe, et, tt, nt, rt, it, st, _t, ot, at, ut, ct, lt, Et, ht, Tt, Pt, It, Rt, At, Vt, dt, ft, mt, pt, gt, yt, wt, bt, ObjectValue, TransformOperation, __PRIVATE_ServerTimestampTransform, __PRIVATE_ArrayUnionTransformOperation, __PRIVATE_ArrayRemoveTransformOperation, __PRIVATE_NumericTransformOperation, __PRIVATE_NumericIncrementTransformOperation, __PRIVATE_NumericMinimumTransformOperation, __PRIVATE_NumericMaximumTransformOperation, MutationResult, Precondition, Mutation, __PRIVATE_SetMutation, __PRIVATE_PatchMutation, __PRIVATE_DeleteMutation, __PRIVATE_VerifyMutation, Bound, Filter, FieldFilter, CompositeFilter, __PRIVATE_KeyFieldFilter, __PRIVATE_KeyFieldInFilter, __PRIVATE_KeyFieldNotInFilter, __PRIVATE_ArrayContainsFilter, __PRIVATE_InFilter, __PRIVATE_NotInFilter, __PRIVATE_ArrayContainsAnyFilter, OrderBy, SnapshotVersion, MutableDocument, St, FieldIndex, IndexOffset, __PRIVATE_TargetImpl, __PRIVATE_QueryImpl, ExistenceFilter, xt, vt, ObjectMap, Dt, Ct, Ft, Ot, Mt, Nt, Bt, BloomFilter, __PRIVATE_BloomFilterError, RemoteEvent, TargetChange, __PRIVATE_DocumentWatchChange, __PRIVATE_ExistenceFilterChange, __PRIVATE_WatchTargetChange, __PRIVATE_TargetState, Lt, __PRIVATE_WatchChangeAggregator, $t, Ut, kt, JsonProtoSerializer, BsonObjectId, BsonTimestamp, Bytes, Decimal128Value, FieldPath2, FieldValue, GeoPoint, Int32Value, MaxKey, MinKey, User, __PRIVATE_Deferred, __PRIVATE_OAuthToken, __PRIVATE_EmptyAuthCredentialsProvider, __PRIVATE_EmulatorAuthCredentialsProvider, __PRIVATE_FirebaseAuthCredentialsProvider, __PRIVATE_FirstPartyToken, __PRIVATE_FirstPartyAuthCredentialsProvider, AppCheckToken, __PRIVATE_FirebaseAppCheckTokenProvider, __PRIVATE_NoopConnectivityMonitor, Qt, __PRIVATE_BrowserConnectivityMonitor, qt, Kt, Wt, __PRIVATE_RestConnection, __PRIVATE_StreamBridge, Gt, __PRIVATE_unguardedEventListen, __PRIVATE_WebChannelConnection, __PRIVATE_ExponentialBackoff, jt, __PRIVATE_PersistentStream, __PRIVATE_PersistentListenStream, __PRIVATE_PersistentWriteStream, Datastore, __PRIVATE_DatastoreImpl, zt, Ht, Jt, Yt, LruParams, __PRIVATE_ListenSequence, Zt, PersistenceTransaction, PersistencePromise, tn, nn, __PRIVATE_RollingSequenceNumberBuffer, __PRIVATE_LruScheduler, __PRIVATE_LruGarbageCollectorImpl, rn, sn, FirestoreSettingsImpl, _n, Query, aa, na, RegexValue, VectorValue, on, ParsedSetData, ParsedUpdateData, ParseContextImpl, UserDataReader, __PRIVATE_DeleteFieldValueImpl, an, OptionsUtil, C, _, AliasedAggregate, AliasedExpression, __PRIVATE_ListOfExprs, Field, Constant, l, BooleanExpression, __PRIVATE_BooleanFunctionExpression, __PRIVATE_BooleanConstant, __PRIVATE_BooleanField, Ordering, Stage, e, x, f, X, Y, Z, sa, p, w, b, h, F, I, __PRIVATE_RealtimePipeline, CorePipeline, __PRIVATE_EvaluateResult, __PRIVATE_CoreField, __PRIVATE_CoreConstant, __PRIVATE_CoreListOfExprs, un, cn, __PRIVATE_BigIntOrDoubleArithmetics, __PRIVATE_CoreAdd, __PRIVATE_CoreSubtract, __PRIVATE_CoreMultiply, __PRIVATE_CoreDivide, __PRIVATE_CoreMod, __PRIVATE_CoreAnd, __PRIVATE_CoreNot, __PRIVATE_CoreOr, __PRIVATE_CoreXor, __PRIVATE_CoreEqAny, __PRIVATE_CoreNotEqAny, __PRIVATE_CoreIsNan, __PRIVATE_CoreIsNotNan, __PRIVATE_CoreIsNull, __PRIVATE_CoreIsNotNull, __PRIVATE_CoreIsError, __PRIVATE_CoreExists, __PRIVATE_CoreCond, __PRIVATE_CoreLogicalMaximum, __PRIVATE_CoreLogicalMinimum, __PRIVATE_ComparisonBase, __PRIVATE_CoreEq, __PRIVATE_CoreNeq, __PRIVATE_CoreLt, __PRIVATE_CoreLte, __PRIVATE_CoreGt, __PRIVATE_CoreGte, __PRIVATE_CoreArrayConcat, __PRIVATE_CoreArrayReverse, __PRIVATE_CoreArrayContains, __PRIVATE_CoreArrayContainsAll, __PRIVATE_CoreArrayContainsAny, __PRIVATE_CoreArrayLength, __PRIVATE_CoreArrayElement, __PRIVATE_CoreReverse, __PRIVATE_CoreReplaceFirst, __PRIVATE_CoreReplaceAll, __PRIVATE_CoreCharLength, __PRIVATE_CoreByteLength, __PRIVATE_StringSearchFunctionBase, __PRIVATE_CoreLike, __PRIVATE_CoreRegexContains, __PRIVATE_CoreRegexMatch, __PRIVATE_CoreStrContains, __PRIVATE_CoreStartsWith, __PRIVATE_CoreEndsWith, __PRIVATE_CoreToLower, __PRIVATE_CoreToUpper, __PRIVATE_CoreTrim, __PRIVATE_CoreStrConcat, __PRIVATE_CoreMapGet, __PRIVATE_DistanceBase, __PRIVATE_CoreCosineDistance, __PRIVATE_CoreDotProduct, __PRIVATE_CoreEuclideanDistance, __PRIVATE_CoreVectorLength, En, hn, Tn, Pn, In, Rn, An, Vn, __PRIVATE_UnixToTimestamp, __PRIVATE_CoreUnixMicrosToTimestamp, __PRIVATE_CoreUnixMillisToTimestamp, __PRIVATE_CoreUnixSecondsToTimestamp, __PRIVATE_TimestampToUnix, __PRIVATE_CoreTimestampToUnixMicros, __PRIVATE_CoreTimestampToUnixMillis, __PRIVATE_CoreTimestampToUnixSeconds, __PRIVATE_TimestampArithmetic, __PRIVATE_CoreTimestampAdd, __PRIVATE_CoreTimestampSub, MutationBatch, MutationBatchResult, dn, fn, mn, gn, wn, Dn, Cn, Ln, Un, qn, zn, Hn, Yn, Xn, tr, rr, ar, Er, Ir, mr, gr, yr, wr, br, Sr, vr, Overlay, TargetData, __PRIVATE_LocalSerializer, __PRIVATE_FirestoreIndexValueWriter, __PRIVATE_MemoryIndexManager, __PRIVATE_MemoryCollectionParentIndex, Or, __PRIVATE_TargetIdGenerator, RemoteDocumentChangeBuffer, OverlayedDocument, LocalDocumentsView, __PRIVATE_MemoryBundleCache, __PRIVATE_MemoryDocumentOverlayCache, __PRIVATE_MemoryGlobalsCache, __PRIVATE_ReferenceSet, __PRIVATE_DocReference, __PRIVATE_MemoryMutationQueue, __PRIVATE_MemoryRemoteDocumentCacheImpl, __PRIVATE_MemoryRemoteDocumentChangeBuffer, __PRIVATE_MemoryTargetCache, __PRIVATE_MemoryPersistence, __PRIVATE_MemoryTransaction, __PRIVATE_MemoryEagerDelegate, __PRIVATE_MemoryLruDelegate, __PRIVATE_LocalViewChanges, QueryContext, __PRIVATE_QueryEngine, Ur, kr, __PRIVATE_LocalStoreImpl, __PRIVATE_OnlineStateTracker, Qr, __PRIVATE_RemoteStoreImpl, __PRIVATE_AsyncObserver, DelayedOperation, __PRIVATE_LocalClientState, __PRIVATE_MemorySharedClientState, DocumentSet, __PRIVATE_DocumentChangeSet, ViewSnapshot, __PRIVATE_QueryListenersInfo, __PRIVATE_EventManagerImpl, zr, __PRIVATE_QueryListener, __PRIVATE_AddedLimboDocument, __PRIVATE_RemovedLimboDocument, __PRIVATE_View, Hr, __PRIVATE_QueryView, LimboResolution, __PRIVATE_SyncEngineImpl, __PRIVATE_MemoryOfflineComponentProvider, __PRIVATE_LruGcMemoryOfflineComponentProvider, OnlineComponentProvider, Jr, FirestoreClient, Yr, Zr, AbstractUserDataWriter, Xr, __PRIVATE_AsyncQueueImpl, pa, ua, SnapshotMetadata, DocumentSnapshot2, QueryDocumentSnapshot2, QuerySnapshot;
   var init_common_DE1gv9M5_esm = __esm({
     "node_modules/@firebase/firestore/dist/common-DE1gv9M5.esm.js"() {
       init_index_esm4();
@@ -23918,6 +23991,14 @@ Total Duration: ${a - u}ms`);
           return null !== this.fieldMask ? new __PRIVATE_PatchMutation(e2, this.data, this.fieldMask, t, this.fieldTransforms) : new __PRIVATE_SetMutation(e2, this.data, t, this.fieldTransforms);
         }
       };
+      ParsedUpdateData = class {
+        constructor(e2, t, n) {
+          this.data = e2, this.fieldMask = t, this.fieldTransforms = n;
+        }
+        toMutation(e2, t) {
+          return new __PRIVATE_PatchMutation(e2, this.data, this.fieldMask, t, this.fieldTransforms);
+        }
+      };
       ParseContextImpl = class _ParseContextImpl {
         /**
          * Initializes a ParseContext with the given source and path.
@@ -24004,6 +24085,15 @@ Total Duration: ${a - u}ms`);
             arrayElement: false,
             hasConverter: r
           }, this.databaseId, this.serializer, this.ignoreUndefinedProperties);
+        }
+      };
+      __PRIVATE_DeleteFieldValueImpl = class ___PRIVATE_DeleteFieldValueImpl extends FieldValue {
+        _toFieldTransform(e2) {
+          if (2 !== e2.dataSource) throw 1 === e2.dataSource ? e2.createError(`${this._methodName}() can only appear at the top level of your update data`) : e2.createError(`${this._methodName}() cannot be used with set() unless you pass {merge:true}`);
+          return e2.fieldMask.push(e2.path), null;
+        }
+        isEqual(e2) {
+          return e2 instanceof ___PRIVATE_DeleteFieldValueImpl;
         }
       };
       an = new RegExp("[~\\*/\\[\\]]");
@@ -26151,6 +26241,58 @@ Total Duration: ${a - u}ms`);
         }
       };
       I.bi = "full_replace";
+      __PRIVATE_RealtimePipeline = class ___PRIVATE_RealtimePipeline {
+        /**
+         * @internal
+         * @private
+         * @param _db
+         * @param userDataReader
+         * @param _userDataWriter
+         * @param _documentReferenceFactory
+         * @param stages
+         */
+        constructor(e2, t, n, r) {
+          this._db = e2, this.userDataReader = t, this._userDataWriter = n, this.stages = r;
+        }
+        /**
+         * Reads user data for each expression in the expressionMap.
+         * @param name Name of the calling function. Used for error messages when invalid user data is encountered.
+         * @param expressionMap
+         * @return the expressionMap argument.
+         * @private
+         * @internal
+         */
+        Ci(e2, t) {
+          const n = this.userDataReader.createContext(3, e2);
+          return __PRIVATE_isUserData(t) ? t._readUserData(n) : Array.isArray(t) ? t.forEach(((e3) => e3._readUserData(n))) : t.forEach(((e3) => e3._readUserData(n))), t;
+        }
+        where(e2) {
+          const t = this.stages.map(((e3) => e3));
+          return this.Ci("where", e2), t.push(new p(e2, {})), new ___PRIVATE_RealtimePipeline(this._db, this.userDataReader, this._userDataWriter, t);
+        }
+        limit(e2) {
+          const t = this.stages.map(((e3) => e3));
+          return t.push(new w(e2, {})), new ___PRIVATE_RealtimePipeline(this._db, this.userDataReader, this._userDataWriter, t);
+        }
+        sort(e2, ...t) {
+          const n = this.stages.map(((e3) => e3));
+          return "orderings" in e2 ? n.push(new F(this.Ci("sort", e2.orderings), {})) : (
+            // Ordering object
+            n.push(new F(this.Ci("sort", [e2, ...t]), {}))
+          ), new ___PRIVATE_RealtimePipeline(this._db, this.userDataReader, this._userDataWriter, n);
+        }
+        /**
+         * @internal
+         * @private
+         */
+        Fi(e2) {
+          return {
+            pipeline: {
+              stages: this.stages.map(((t) => t._toProto(e2)))
+            }
+          };
+        }
+      };
       CorePipeline = class {
         constructor(e2, t, n) {
           this.serializer = e2, this.stages = t, this.listenOptions = n, this.isCorePipeline = true;
@@ -30879,14 +31021,36 @@ This typically indicates that your device does not have a healthy Internet conne
       return false;
     })(e2, ["next", "error", "complete"]);
   }
+  function __PRIVATE_validateReference(e2, t) {
+    if ((e2 = getModularInstance(e2)).firestore !== t) throw new Q(z.INVALID_ARGUMENT, "Provided document reference is from a different Firestore instance.");
+    return e2;
+  }
   function getDoc(e2) {
     e2 = ra(e2, aa);
     const t = ra(e2.firestore, pa), n = oa(t);
     return __PRIVATE_firestoreClientGetDocumentViaSnapshotListener(n, e2._key).then(((n2) => __PRIVATE_convertToDocSnapshot(t, e2, n2)));
   }
-  function addDoc(e2, t) {
-    const n = ra(e2.firestore, pa), r = doc(e2), s = __PRIVATE_applyFirestoreDataConverter(e2.converter, t), a = la(e2.firestore);
-    return executeWrite(n, [__PRIVATE_parseSetData(a, "addDoc", r._key, s, null !== e2.converter, {}).toMutation(r._key, Precondition.exists(false))]).then((() => r));
+  function getDocs(e2) {
+    e2 = ra(e2, Query);
+    const t = ra(e2.firestore, pa), n = oa(t), r = new ua(t);
+    return __PRIVATE_validateHasExplicitOrderByForLimitToLast(e2._query), __PRIVATE_firestoreClientGetDocumentsViaSnapshotListener(n, e2._query).then(((n2) => new QuerySnapshot(t, r, e2, n2)));
+  }
+  function setDoc(e2, t, n) {
+    e2 = ra(e2, aa);
+    const r = ra(e2.firestore, pa), s = __PRIVATE_applyFirestoreDataConverter(e2.converter, t, n), a = la(r);
+    return executeWrite(r, [__PRIVATE_parseSetData(a, "setDoc", e2._key, s, null !== e2.converter, n).toMutation(e2._key, Precondition.none())]);
+  }
+  function updateDoc(e2, t, n, ...r) {
+    e2 = ra(e2, aa);
+    const s = ra(e2.firestore, pa), a = la(s);
+    let o;
+    o = "string" == typeof // For Compat types, we have to "extract" the underlying types before
+    // performing validation.
+    (t = getModularInstance(t)) || t instanceof FieldPath2 ? __PRIVATE_parseUpdateVarargs(a, "updateDoc", e2._key, t, n, r) : __PRIVATE_parseUpdateData(a, "updateDoc", e2._key, t);
+    return executeWrite(s, [o.toMutation(e2._key, Precondition.exists(true))]);
+  }
+  function deleteDoc(e2) {
+    return executeWrite(ra(e2.firestore, pa), [new __PRIVATE_DeleteMutation(e2._key, Precondition.none())]);
   }
   function onSnapshot(e2, ...t) {
     e2 = getModularInstance(e2);
@@ -30934,7 +31098,10 @@ This typically indicates that your device does not have a healthy Internet conne
     const r = n.docs.get(t._key), s = new ua(e2);
     return new DocumentSnapshot2(e2, s, t._key, r, new SnapshotMetadata(n.hasPendingWrites, n.fromCache), t.converter);
   }
-  var AppliableConstraint, QueryConstraint, QueryFieldFilterConstraint, QueryCompositeFilterConstraint, qe2, Be2;
+  function writeBatch(e2) {
+    return e2 = ra(e2, pa), oa(e2), new WriteBatch(e2, ((t) => executeWrite(e2, t)));
+  }
+  var AppliableConstraint, QueryConstraint, QueryFieldFilterConstraint, QueryCompositeFilterConstraint, WriteBatch, qe2, Be2;
   var init_index_esm7 = __esm({
     "node_modules/@firebase/firestore/dist/index.esm.js"() {
       init_index_esm4();
@@ -31029,6 +31196,52 @@ This typically indicates that your device does not have a healthy Internet conne
           return "and" === this.type ? "and" : "or";
         }
       };
+      WriteBatch = class {
+        /** @hideconstructor */
+        constructor(e2, t) {
+          this._firestore = e2, this._commitHandler = t, this._mutations = [], this._committed = false, this._dataReader = la(e2);
+        }
+        set(e2, t, n) {
+          this._verifyNotCommitted();
+          const r = __PRIVATE_validateReference(e2, this._firestore), s = __PRIVATE_applyFirestoreDataConverter(r.converter, t, n), a = __PRIVATE_parseSetData(this._dataReader, "WriteBatch.set", r._key, s, null !== r.converter, n);
+          return this._mutations.push(a.toMutation(r._key, Precondition.none())), this;
+        }
+        update(e2, t, n, ...r) {
+          this._verifyNotCommitted();
+          const s = __PRIVATE_validateReference(e2, this._firestore);
+          let a;
+          return a = "string" == typeof (t = getModularInstance(t)) || t instanceof FieldPath2 ? __PRIVATE_parseUpdateVarargs(this._dataReader, "WriteBatch.update", s._key, t, n, r) : __PRIVATE_parseUpdateData(this._dataReader, "WriteBatch.update", s._key, t), this._mutations.push(a.toMutation(s._key, Precondition.exists(true))), this;
+        }
+        /**
+         * Deletes the document referred to by the provided {@link DocumentReference}.
+         *
+         * @param documentRef - A reference to the document to be deleted.
+         * @returns This `WriteBatch` instance. Used for chaining method calls.
+         */
+        delete(e2) {
+          this._verifyNotCommitted();
+          const t = __PRIVATE_validateReference(e2, this._firestore);
+          return this._mutations = this._mutations.concat(new __PRIVATE_DeleteMutation(t._key, Precondition.none())), this;
+        }
+        /**
+         * Commits all of the writes in this write batch as a single atomic unit.
+         *
+         * The result of these writes will only be reflected in document reads that
+         * occur after the returned promise resolves. If the client is offline, the
+         * write fails. If you would like to see local modifications or buffer writes
+         * until the client is online, use the full Firestore SDK.
+         *
+         * @returns A `Promise` resolved once all of the writes in the batch have been
+         * successfully written to the backend as an atomic unit (note that it won't
+         * resolve while you're offline).
+         */
+        commit() {
+          return this._verifyNotCommitted(), this._committed = true, this._mutations.length > 0 ? this._commitHandler(this._mutations) : Promise.resolve();
+        }
+        _verifyNotCommitted() {
+          if (this._committed) throw new Q(z.FAILED_PRECONDITION, "A write batch can no longer be used after commit() has been called.");
+        }
+      };
       qe2 = "@firebase/firestore";
       Be2 = "4.19.0";
       !/**
@@ -31067,108 +31280,696 @@ This typically indicates that your device does not have a healthy Internet conne
     }
   });
 
+  // src/domain.mjs
+  function isValidActualEnd(scheduledStart, actualEnd, now = Date.now()) {
+    const start = millis(scheduledStart, NaN);
+    const end = millis(actualEnd, NaN);
+    return Number.isFinite(start) && Number.isFinite(end) && end >= start && end <= now;
+  }
+  function getClassWindow(session, now = Date.now()) {
+    const start = millis(session.scheduledStart);
+    const scheduledEnd = millis(session.scheduledEnd);
+    const actualEnd = session.actualEnd == null ? null : millis(session.actualEnd);
+    const end = Math.min(scheduledEnd, actualEnd ?? scheduledEnd);
+    return { start, end: Math.max(start, Math.min(end, now)) };
+  }
+  function classIntervals(session, window2) {
+    const configured = Array.isArray(session.meetIntervals) ? session.meetIntervals : [];
+    if (!configured.length) return [{ start: window2.start, end: window2.end }];
+    return configured.map((interval) => ({
+      start: Math.max(window2.start, millis(interval.start)),
+      end: Math.min(window2.end, interval.end == null ? window2.end : millis(interval.end))
+    })).filter((interval) => interval.end > interval.start);
+  }
+  function deriveStudentMetrics(student, session, rosterEntry = {}, now = Date.now()) {
+    const window2 = getClassWindow(session, now);
+    const rawVisits = Array.isArray(student?.visits) ? student.visits : [];
+    const visitsByJoin = /* @__PURE__ */ new Map();
+    for (const visit of rawVisits) {
+      const join = millis(visit.join);
+      const existing = visitsByJoin.get(join);
+      if (!existing || existing.leave != null && visit.leave == null || millis(visit.leave) > millis(existing.leave)) visitsByJoin.set(join, visit);
+    }
+    const visits = [...visitsByJoin.values()].sort((a, b2) => millis(a.join) - millis(b2.join));
+    const lastHeartbeat = millis(student?.lastHeartbeat);
+    const intervals = classIntervals(session, window2);
+    const cutoff = Math.max(window2.start, Math.min(window2.end, now));
+    const timeline = [];
+    for (const visit of visits) {
+      const join = Math.max(window2.start, millis(visit.join));
+      const rawLeave = visit.leave == null ? Math.min(lastHeartbeat ? lastHeartbeat + 9e4 > cutoff ? cutoff : lastHeartbeat + 9e4 : join, cutoff) : millis(visit.leave);
+      const leave = Math.min(window2.end, cutoff, Math.max(join, rawLeave));
+      for (const interval of intervals) {
+        const segmentStart = Math.max(join, interval.start);
+        const segmentEnd = Math.min(leave, interval.end);
+        if (segmentEnd > segmentStart) timeline.push({ join: segmentStart, leave: segmentEnd });
+      }
+    }
+    timeline.sort((a, b2) => a.join - b2.join);
+    const mergedTimeline = [];
+    for (const segment of timeline) {
+      const prior = mergedTimeline.at(-1);
+      if (prior && segment.join <= prior.leave) prior.leave = Math.max(prior.leave, segment.leave);
+      else mergedTimeline.push({ ...segment });
+    }
+    const attendedMs = mergedTimeline.reduce((total, segment) => total + segment.leave - segment.join, 0);
+    const rejoinCount = Math.max(0, mergedTimeline.length - 1);
+    const classMs = intervals.reduce((total, interval) => total + interval.end - interval.start, 0);
+    const attendedSeconds = Math.round(attendedMs / 1e3);
+    const percentage = classMs ? Math.min(100, attendedMs / classMs * 100) : 0;
+    const thresholds = session.thresholds ?? {};
+    const presentPct = number(thresholds.presentPct, 75);
+    const lateMinutes = number(thresholds.lateMinutes, 10);
+    const joinedAt = visits.length ? Math.min(...visits.map((v) => millis(v.join, Infinity))) : null;
+    const upcoming = now < window2.start;
+    const noExtension = !student && !upcoming;
+    const status = upcoming ? ["Upcoming"] : noExtension || !attendedMs ? ["Absent"] : [percentage >= presentPct ? "Present" : "Partial"];
+    if (joinedAt != null && joinedAt > number(session.scheduledStart?.toMillis?.() ?? session.scheduledStart) + lateMinutes * 6e4) status.push("Late");
+    const availability = student?.signalAvailability;
+    const participationAvailable = !!availability && availability.chat === true && availability.reactions === true && availability.mic === true;
+    const totalAwaySeconds = number(student?.awaySeconds);
+    const awayPeriods = (student?.awayPeriods ?? []).map((period) => ({
+      start: Math.max(window2.start, millis(period.start)),
+      end: Math.min(window2.end, millis(period.end))
+    })).filter((period) => period.end > period.start);
+    const screenFocus = attendedSeconds ? Math.max(0, 1 - totalAwaySeconds / attendedSeconds) : 0;
+    const weight = number(thresholds.participationTargetPerHour, 5);
+    const interactionTarget = weight * (classMs / 36e5 || 1);
+    const participationCount = 2 * number(student?.chatCount) + number(student?.reactionCount) + number(student?.micOpens);
+    const participation = participationAvailable ? Math.min(1, participationCount / Math.max(1, interactionTarget)) : null;
+    const stability = Math.max(0, 1 - Math.min(1, 0.25 * rejoinCount));
+    const weights = thresholds.focusWeights ?? { screen: 0.6, participation: 0.25, stability: 0.15 };
+    const score = participationAvailable ? number(weights.screen, 0.6) * screenFocus + number(weights.participation, 0.25) * participation + number(weights.stability, 0.15) * stability : screenFocus * (number(weights.screen, 0.6) + number(weights.participation, 0.25)) + number(weights.stability, 0.15) * stability;
+    const focus = noExtension ? null : Math.round(Math.max(0, Math.min(1, score)) * 100);
+    const inMeet = !!student && (session.status ?? "live") === "live" && session.actualEnd == null && lastHeartbeat >= now - 9e4 && visits.some((v) => v.leave == null);
+    return {
+      email: student?.email ?? rosterEntry.email ?? "",
+      name: student?.name ?? rosterEntry.name ?? rosterEntry.email ?? "Unknown student",
+      noExtension,
+      inMeet,
+      visits: mergedTimeline,
+      awayPeriods,
+      currentlyAway: inMeet && !!student?.currentlyAway,
+      joinedAt,
+      leftAt: inMeet ? null : mergedTimeline.length ? mergedTimeline[mergedTimeline.length - 1].leave : null,
+      totalSeconds: attendedSeconds,
+      attendancePct: Math.round(percentage * 10) / 10,
+      rejoinCount,
+      awayCount: number(student?.awayCount),
+      awaySeconds: totalAwaySeconds,
+      chatCount: availability?.chat !== true ? null : number(student?.chatCount),
+      reactionCount: availability?.reactions !== true ? null : number(student?.reactionCount),
+      micOpens: availability?.mic !== true ? null : number(student?.micOpens),
+      micUnmutedSeconds: availability?.mic !== true ? null : number(student?.micUnmutedSeconds),
+      participationAvailable,
+      focus,
+      focusLabel: focus == null ? "Unavailable" : focus >= 80 ? "Focused" : focus >= 50 ? "Moderate" : "Low",
+      status,
+      signalAvailability: { chat: availability?.chat === true, reactions: availability?.reactions === true, mic: availability?.mic === true }
+    };
+  }
+  function summarizeSession(session, roster, students, now = Date.now()) {
+    const studentMap = students instanceof Map ? students : new Map(Object.entries(students ?? {}));
+    const rows = [...roster].map((entry) => {
+      const key = String(entry.email).toLowerCase();
+      return deriveStudentMetrics(studentMap.get(key) ?? studentMap.get(entry.email), session, entry, now);
+    });
+    const count = (key) => rows.filter((row) => row.status.includes(key)).length;
+    const scores = rows.map((row) => row.focus).filter((value) => value != null);
+    return { rows, present: count("Present"), late: count("Late"), partial: count("Partial"), absent: count("Absent"), currentlyInMeet: rows.filter((row) => row.inMeet).length, averageFocus: scores.length ? Math.round(scores.reduce((a, b2) => a + b2, 0) / scores.length) : null };
+  }
+  function csvEscape(value) {
+    let text = value == null ? "" : String(value);
+    if (/^[\s\u0000-\u001f]*[=+@-]/.test(text)) text = `'${text}`;
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+  function makeCsv(headers, rows) {
+    return [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\r\n");
+  }
+  function parseRosterCsv(text) {
+    text = String(text).replace(/^\uFEFF/, "");
+    const records = [];
+    let row = [], cell = "", quoted = false;
+    for (let i2 = 0; i2 < text.length; i2++) {
+      const ch = text[i2];
+      if (quoted && ch === '"' && text[i2 + 1] === '"') {
+        cell += '"';
+        i2++;
+      } else if (ch === '"') quoted = !quoted;
+      else if (ch === "," && !quoted) {
+        row.push(cell.trim());
+        cell = "";
+      } else if ((ch === "\n" || ch === "\r") && !quoted) {
+        if (ch === "\r" && text[i2 + 1] === "\n") i2++;
+        row.push(cell.trim());
+        if (row.some(Boolean)) records.push(row);
+        row = [];
+        cell = "";
+      } else cell += ch;
+    }
+    if (cell || row.length) {
+      row.push(cell.trim());
+      records.push(row);
+    }
+    if (quoted) throw new Error("Roster CSV has an unclosed quotation mark.");
+    if (records.length && /^(name|student.?name)$/i.test(records[0][0]) && /^(e-?mail|student.?e-?mail)$/i.test(records[0][1] ?? "")) records.shift();
+    const byEmail = /* @__PURE__ */ new Map();
+    for (const [name4, email] of records) {
+      const key = String(email ?? "").trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(key)) throw new Error(`Invalid roster email: ${key || "blank"}`);
+      const cleanName = String(name4 ?? "").trim().slice(0, 100);
+      if (!cleanName) throw new Error(`Missing name for ${key}`);
+      byEmail.set(key, { email: key, name: cleanName });
+    }
+    return [...byEmail.values()];
+  }
+  var number, millis;
+  var init_domain = __esm({
+    "src/domain.mjs"() {
+      number = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+      millis = (value, fallback = 0) => value?.toMillis ? value.toMillis() : value?.toDate ? value.toDate().getTime() : number(value, fallback);
+    }
+  });
+
   // src/dashboard.js
   var require_dashboard = __commonJS({
     "src/dashboard.js"() {
       init_firebase();
       init_index_esm8();
+      init_domain();
       var db = getFirestore(app);
       var $ = (id) => document.getElementById(id);
-      function parseCode(value) {
-        return value.toLowerCase().match(/[a-z]{3}-[a-z]{4}-[a-z]{3}/)?.[0];
+      var state = { email: null, sessions: [], selected: null, roster: [], students: /* @__PURE__ */ new Map(), metrics: null, stops: [], sessionStop: null, timer: null, sort: { key: "name", direction: 1 } };
+      var day = 864e5;
+      function showMessage(message, isError = false) {
+        $("message").textContent = message;
+        $("message").classList.toggle("bad", isError);
+        $("message").classList.remove("hidden");
+      }
+      function hideMessage() {
+        $("message").classList.add("hidden");
+      }
+      function toInputTime(timestamp) {
+        if (!timestamp) return "";
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        const local = new Date(date.getTime() - date.getTimezoneOffset() * 6e4);
+        return local.toISOString().slice(0, 16);
+      }
+      function parseInputTime(value) {
+        const date = new Date(value);
+        if (!value || Number.isNaN(date.getTime())) throw new Error("Enter valid start and end times.");
+        return Timestamp.fromDate(date);
+      }
+      function formatTime(ms) {
+        return ms == null ? "\u2014" : new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      }
+      function duration(seconds) {
+        if (seconds == null) return "Unavailable";
+        const m2 = Math.round(seconds / 60);
+        return `${Math.floor(m2 / 60)}h ${m2 % 60}m`;
+      }
+      function safeText(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+      }
+      async function cleanupExpiredSessions(sessions) {
+        const cutoff = Date.now() - 90 * day;
+        for (const item of sessions) {
+          const end = item.actualEnd?.toMillis?.() ?? item.scheduledEnd?.toMillis?.() ?? 0;
+          if (item.status === "live" || end > cutoff) continue;
+          for (const sub of ["roster", "students", "deletionRequests"]) {
+            const docs = await getDocs(collection(db, "sessions", item.id, sub));
+            for (let i2 = 0; i2 < docs.docs.length; i2 += 450) {
+              const batch = writeBatch(db);
+              docs.docs.slice(i2, i2 + 450).forEach((entry) => batch.delete(entry.ref));
+              await batch.commit();
+            }
+          }
+          for (const code of item.meetCodes ?? []) {
+            const indexRef = doc(db, "meetSessions", code);
+            const index = await getDoc(indexRef);
+            if (index.exists() && index.data().sessionId === item.id) await deleteDoc(indexRef);
+          }
+          await deleteDoc(doc(db, "sessions", item.id));
+        }
+      }
+      function renderSessions() {
+        const box = $("sessions");
+        box.replaceChildren();
+        if (!state.sessions.length) {
+          box.textContent = "No sessions yet.";
+          return;
+        }
+        for (const session of state.sessions) {
+          const button = document.createElement("button");
+          button.className = `secondary${session.id === state.selected ? " session-selected" : ""}`;
+          button.textContent = `${session.className} \xB7 ${session.status} \xB7 ${session.scheduledStart?.toDate?.().toLocaleString?.() ?? ""}`;
+          button.addEventListener("click", () => selectSession(session.id));
+          box.append(button);
+        }
+      }
+      async function loadSessions() {
+        const snapshot = await getDocs(query(collection(db, "sessions"), where("teacherEmail", "==", state.email)));
+        state.sessions = snapshot.docs.map((item) => ({ id: item.id, ...item.data() })).sort((a, b2) => b2.scheduledStart.toMillis() - a.scheduledStart.toMillis());
+        await cleanupExpiredSessions(state.sessions);
+        renderSessions();
+        if (state.selected && !state.sessions.some((item) => item.id === state.selected)) state.selected = null;
+      }
+      async function createSession(event) {
+        event.preventDefault();
+        const output = $("create-result");
+        output.textContent = "Creating\u2026";
+        try {
+          if (!$("informed").checked) throw new Error("Confirm that your class has been informed first.");
+          const start = parseInputTime($("scheduled-start").value);
+          const end = parseInputTime($("scheduled-end").value);
+          if (end.toMillis() <= start.toMillis()) throw new Error("Scheduled end must be later than scheduled start.");
+          const rawCodes = $("meet-codes").value.toLowerCase().split(",").map((value) => value.trim()).filter(Boolean);
+          if (!rawCodes.length || rawCodes.some((code) => !/^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(code))) throw new Error("Enter valid Meet codes, separated by commas (for example abc-defg-hij).");
+          const codes = [...new Set(rawCodes)];
+          let rosterText = $("roster-text").value;
+          if ($("roster-file").files[0]) rosterText = await $("roster-file").files[0].text();
+          const roster = rosterText.trim() ? parseRosterCsv(rosterText) : [];
+          if (!roster.length) throw new Error("Add at least one roster entry before creating the session.");
+          const focusWeights = { screen: Number($("focus-screen").value), participation: Number($("focus-participation").value), stability: Number($("focus-stability").value) };
+          if (Object.values(focusWeights).some((value) => !Number.isFinite(value) || value < 0) || Object.values(focusWeights).reduce((a, b2) => a + b2, 0) !== 100) throw new Error("Focus weights must be non-negative and add up to 100%.");
+          const now = Date.now();
+          const status = now >= end.toMillis() ? "ended" : now >= start.toMillis() ? "live" : "scheduled";
+          const actualEnd = status === "ended" ? end : null;
+          const ref = doc(collection(db, "sessions"));
+          const sessionData = {
+            className: $("class-name").value.trim(),
+            meetCodes: codes,
+            scheduledStart: start,
+            scheduledEnd: end,
+            actualEnd,
+            meetIntervals: [],
+            teacherEmail: state.email,
+            status,
+            thresholds: { presentPct: Number($("present-percent").value), lateMinutes: Number($("late-minutes").value), participationTargetPerHour: Number($("participation-target").value), focusWeights: { screen: focusWeights.screen / 100, participation: focusWeights.participation / 100, stability: focusWeights.stability / 100 } },
+            retentionDays: 90,
+            classInformedAt: Timestamp.now(),
+            createdAt: Timestamp.now()
+          };
+          const createBatch = writeBatch(db);
+          createBatch.set(ref, sessionData);
+          for (const code of codes) createBatch.set(doc(db, "meetSessions", code), { meetCode: code, sessionId: ref.id, teacherEmail: state.email, status, actualEnd });
+          await createBatch.commit();
+          for (let i2 = 0; i2 < roster.length; i2 += 400) {
+            const batch = writeBatch(db);
+            roster.slice(i2, i2 + 400).forEach((entry) => batch.set(doc(db, "sessions", ref.id, "roster", entry.email), entry));
+            await batch.commit();
+          }
+          $("session-form").reset();
+          $("late-minutes").value = 10;
+          $("present-percent").value = 75;
+          $("participation-target").value = 5;
+          $("focus-screen").value = 60;
+          $("focus-participation").value = 25;
+          $("focus-stability").value = 15;
+          output.textContent = `Created with ${roster.length} roster entries.`;
+          await loadSessions();
+          await selectSession(ref.id);
+        } catch (error) {
+          output.textContent = error.message;
+          output.classList.add("bad");
+        }
+      }
+      function stopSelectedListeners() {
+        state.stops.forEach((stop) => stop());
+        state.stops = [];
+        if (state.sessionStop) state.sessionStop();
+        state.sessionStop = null;
+      }
+      async function selectSession(id) {
+        stopSelectedListeners();
+        state.selected = id;
+        renderSessions();
+        $("selected").classList.remove("hidden");
+        const ref = doc(db, "sessions", id);
+        state.sessionStop = onSnapshot(ref, (snapshot) => {
+          if (!snapshot.exists()) {
+            $("selected").classList.add("hidden");
+            return;
+          }
+          const session = { id, ...snapshot.data() };
+          const existing = state.sessions.findIndex((item) => item.id === id);
+          if (existing >= 0) state.sessions[existing] = session;
+          renderSessions();
+          renderSession(session);
+          renderMetrics();
+          syncIndexes(session).catch((error) => console.warn("Meet-code index sync failed:", error.message));
+          const now = Date.now();
+          if (session.status === "scheduled" && now >= session.scheduledStart.toMillis() && now < session.scheduledEnd.toMillis()) {
+            updateDoc(ref, { status: "live", updatedAt: Timestamp.now() }).catch((error) => showMessage(`Could not start session: ${error.message}`, true));
+          } else if (session.status === "live" && now >= session.scheduledEnd.toMillis()) {
+            updateDoc(ref, { actualEnd: session.scheduledEnd, status: "ended", updatedAt: Timestamp.now() }).catch((error) => showMessage(`Could not end scheduled session: ${error.message}`, true));
+          }
+        }, (error) => showMessage(`Session listener failed: ${error.message}`, true));
+        state.stops.push(onSnapshot(collection(db, "sessions", id, "roster"), (snapshot) => {
+          state.roster = snapshot.docs.map((item) => ({ email: item.id, ...item.data() }));
+          renderMetrics();
+        }, (error) => showMessage(`Roster could not load: ${error.message}`, true)));
+        state.stops.push(onSnapshot(collection(db, "sessions", id, "students"), (snapshot) => {
+          state.students = new Map(snapshot.docs.map((item) => [item.id.toLowerCase(), { email: item.id, ...item.data() }]));
+          renderMetrics();
+        }, (error) => showMessage(`Student activity could not load: ${error.message}`, true)));
+        state.stops.push(onSnapshot(query(collection(db, "sessions", id, "deletionRequests"), where("status", "==", "pending")), (snapshot) => renderDeletionRequests(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))), (error) => {
+          $("deletion-requests").textContent = `Could not load requests: ${error.message}`;
+        }));
+      }
+      function renderSession(session) {
+        state.currentSession = session;
+        $("session-title").textContent = session.className;
+        $("session-meta").textContent = `${(session.meetCodes ?? []).join(", ")} \xB7 ${session.scheduledStart.toDate().toLocaleString()} \u2013 ${session.scheduledEnd.toDate().toLocaleString()} \xB7 ${session.status}`;
+        $("actual-end").value = toInputTime(session.actualEnd);
+        $("end-session").disabled = session.status === "ended";
+        $("end-session").textContent = session.status === "ended" ? "Class ended" : "End class now";
+        const weights = session.thresholds?.focusWeights ?? { screen: 0.6, participation: 0.25, stability: 0.15 };
+        $("formula").textContent = `Focus = ${Math.round(weights.screen * 100)}% \xD7 screen focus + ${Math.round(weights.participation * 100)}% \xD7 participation + ${Math.round(weights.stability * 100)}% \xD7 stability. Screen focus = 1 \u2212 away seconds \xF7 time attended. Participation target: ${session.thresholds?.participationTargetPerHour ?? 5} interactions/hour. Present at \u2265${session.thresholds?.presentPct ?? 75}%; late after ${session.thresholds?.lateMinutes ?? 10} minutes. Missing participation signals are shown as unavailable and their weight moves to screen focus.`;
+        const unavailable = state.metrics?.rows.filter((row) => !row.participationAvailable).length ?? 0;
+        $("signals").textContent = unavailable ? `Participation unavailable for ${unavailable} student(s) until Meet selectors are configured.` : "Participation signal configuration is available.";
+      }
+      async function updateRoster(event) {
+        event.preventDefault();
+        const result = $("roster-result");
+        result.textContent = "Saving\u2026";
+        try {
+          const file = $("roster-file-edit").files[0];
+          const text = file ? await file.text() : $("roster-text-edit").value;
+          const incoming = parseRosterCsv(text);
+          if (!incoming.length) throw new Error("Add at least one valid name,email roster row.");
+          const rosterRef = collection(db, "sessions", state.selected, "roster");
+          const existing = await getDocs(rosterRef);
+          const incomingIds = new Set(incoming.map((entry) => entry.email));
+          if ($("roster-mode").value === "replace") {
+            const removed = existing.docs.filter((entry) => !incomingIds.has(entry.id));
+            if (removed.length && !confirm(`Remove ${removed.length} roster entry/entries and delete their session attendance data?`)) return;
+            for (const entry of removed) {
+              await deleteDoc(doc(db, "sessions", state.selected, "students", entry.id));
+              await deleteDoc(entry.ref);
+            }
+          }
+          for (let i2 = 0; i2 < incoming.length; i2 += 400) {
+            const batch = writeBatch(db);
+            incoming.slice(i2, i2 + 400).forEach((entry) => batch.set(doc(db, "sessions", state.selected, "roster", entry.email), entry));
+            await batch.commit();
+          }
+          result.textContent = `Saved ${incoming.length} roster entry/entries.`;
+          $("roster-text-edit").value = "";
+          $("roster-file-edit").value = "";
+        } catch (error) {
+          result.textContent = error.message;
+          result.classList.add("bad");
+        }
+      }
+      async function loadSelectors() {
+        const snapshot = await getDoc(doc(db, "config", "meetSelectors"));
+        if (!snapshot.exists()) return;
+        const data = snapshot.data();
+        $("chat-selector").value = data.chatSendSelector ?? "";
+        $("mic-selector").value = data.microphoneSelector ?? "";
+        $("reaction-selectors").value = (data.reactionSelectors ?? []).join("\n");
+      }
+      async function saveSelectors(event) {
+        event.preventDefault();
+        const output = $("selector-result");
+        output.textContent = "Saving\u2026";
+        const reactions = $("reaction-selectors").value.split(/\r?\n/).map((value) => value.trim()).filter(Boolean);
+        const data = { chatSendSelector: $("chat-selector").value.trim(), microphoneSelector: $("mic-selector").value.trim(), reactionSelectors: reactions, updatedAt: Timestamp.now(), updatedBy: state.email };
+        try {
+          for (const selector of [data.chatSendSelector, data.microphoneSelector, ...reactions]) if (selector) document.querySelector(selector);
+          await setDoc(doc(db, "config", "meetSelectors"), data);
+          output.textContent = "Saved. New monitoring sessions will use these selectors.";
+        } catch (error) {
+          output.textContent = `Invalid selector or save failed: ${error.message}`;
+        }
+      }
+      function renderMetrics() {
+        if (!state.currentSession) return;
+        state.metrics = summarizeSession(state.currentSession, state.roster, state.students, Date.now());
+        renderSummary();
+        renderStudents();
+        renderCharts();
+      }
+      async function syncIndexes(session) {
+        for (const code of session.meetCodes ?? []) {
+          const ref = doc(db, "meetSessions", code);
+          const snapshot = await getDoc(ref);
+          if (!snapshot.exists() || snapshot.data().sessionId !== session.id || snapshot.data().status !== session.status) {
+            await setDoc(ref, { meetCode: code, sessionId: session.id, teacherEmail: state.email, status: session.status, actualEnd: session.actualEnd ?? null });
+          }
+        }
+      }
+      function renderSummary() {
+        const data = state.metrics;
+        const values = [["Present", data.present], ["Late", data.late], ["Partial", data.partial], ["Absent / no SEEge activity", data.absent], ["Average focus", data.averageFocus == null ? "\u2014" : `${data.averageFocus}%`], ["Currently in Meet", data.currentlyInMeet]];
+        $("summary").replaceChildren(...values.map(([label, value]) => {
+          const box = document.createElement("div");
+          box.className = "stat card";
+          box.innerHTML = `<span class="muted">${label}</span><b>${value}</b>`;
+          return box;
+        }));
+      }
+      function renderStudents() {
+        const body = $("student-rows");
+        body.replaceChildren();
+        const search = $("search").value.trim().toLowerCase();
+        const filter = $("status-filter").value;
+        const rows = state.metrics.rows.filter((row) => (!search || `${row.name} ${row.email}`.toLowerCase().includes(search)) && (filter === "all" || row.status.includes(filter)));
+        const key = state.sort.key;
+        const direction = state.sort.direction;
+        rows.sort((a, b2) => {
+          const value = (row) => key === "status" ? row.status.join(" ") : row[key];
+          const left = value(a), right = value(b2);
+          if (left == null) return right == null ? 0 : 1;
+          if (right == null) return -1;
+          return (typeof left === "string" ? left.localeCompare(right) : left - right) * direction;
+        });
+        for (const button of document.querySelectorAll(".sort")) {
+          const active = button.dataset.sort === key;
+          const label = button.textContent.replace(/ [↑↓↕]$/, "");
+          button.textContent = `${label} ${active ? direction > 0 ? "\u2191" : "\u2193" : "\u2195"}`;
+          button.setAttribute("aria-sort", active ? direction > 0 ? "ascending" : "descending" : "none");
+        }
+        for (const row of rows) {
+          const tr2 = document.createElement("tr");
+          const statuses = row.status.map((value) => `<span class="badge ${value === "Present" ? "good" : value === "Late" ? "late" : value === "Absent" ? "bad" : ""}">${safeText(value)}</span>`).join("");
+          const focus = row.focus == null ? "Unavailable" : `${row.focus}% <span class="focusbar"><i style="width:${row.focus}%"></i></span>`;
+          const presence = row.noExtension ? '<span class="badge bad">\u25CF No activity detected</span>' : row.inMeet ? row.currentlyAway ? '<span class="badge late">\u25CF In Meet \xB7 Away</span>' : '<span class="badge good">\u25CF In Meet \xB7 Focused</span>' : '<span class="badge">\u25CF Left</span>';
+          const values = [safeText(row.name), statuses, formatTime(row.joinedAt), formatTime(row.leftAt), duration(row.totalSeconds), row.rejoinCount, `${row.awayCount} / ${duration(row.awaySeconds)}`, row.chatCount == null ? "Unavailable" : row.chatCount, row.reactionCount == null ? "Unavailable" : row.reactionCount, row.micOpens == null ? "Unavailable" : row.micOpens, focus, presence, ""];
+          for (let i2 = 0; i2 < values.length; i2++) {
+            const td = document.createElement("td");
+            td.innerHTML = values[i2];
+            tr2.append(td);
+          }
+          const button = document.createElement("button");
+          button.className = "secondary";
+          button.textContent = "Details";
+          button.addEventListener("click", () => showStudentDetail(row));
+          tr2.lastChild.append(button);
+          body.append(tr2);
+        }
+      }
+      function renderCharts() {
+        const { present, late, partial, absent, rows } = state.metrics;
+        const lateOnly = rows.filter((row) => row.status.includes("Late") && !row.status.includes("Present")).length;
+        const presentOnly = rows.filter((row) => row.status.includes("Present") && !row.status.includes("Late")).length;
+        const otherPartial = rows.filter((row) => row.status.includes("Partial") && !row.status.includes("Late")).length;
+        const lateCount = rows.filter((row) => row.status.includes("Late")).length;
+        const n = Math.max(rows.length, 1);
+        const a = presentOnly / n * 360;
+        const b2 = a + lateCount / n * 360;
+        const c = b2 + otherPartial / n * 360;
+        $("donut").style.background = `conic-gradient(var(--green) 0deg ${a}deg,var(--amber) ${a}deg ${b2}deg,var(--blue) ${b2}deg ${c}deg,var(--line) ${c}deg 360deg)`;
+        $("donut-label").textContent = `${rows.length} rostered`;
+        $("legend").textContent = `Present ${presentOnly} \xB7 Late ${lateOnly} \xB7 Partial ${otherPartial} \xB7 Absent ${absent}${lateCount !== lateOnly ? ` \xB7 Late and partial ${lateCount - lateOnly}` : ""}`;
+        const bins = [0, 0, 0, 0, 0];
+        for (const row of rows) if (row.focus != null) bins[Math.min(4, Math.floor(row.focus / 20))]++;
+        const max = Math.max(1, ...bins);
+        const bars = $("focus-bars");
+        bars.replaceChildren();
+        bins.forEach((count, i2) => {
+          const div = document.createElement("div");
+          div.style.height = `${Math.max(4, count / max * 130)}px`;
+          div.title = `${count} student(s)`;
+          const small = document.createElement("small");
+          small.textContent = ["0\u201319", "20\u201339", "40\u201359", "60\u201379", "80\u2013100"][i2];
+          div.append(small);
+          bars.append(div);
+        });
+      }
+      function showStudentDetail(row) {
+        $("detail-name").textContent = `${row.name} \xB7 ${row.email}`;
+        const start = state.currentSession.scheduledStart.toMillis();
+        const end = (state.currentSession.actualEnd ?? state.currentSession.scheduledEnd).toMillis();
+        const width = Math.max(1, end - start);
+        const track = document.createElement("div");
+        track.className = "timeline";
+        for (const visit of row.visits) {
+          const segment = document.createElement("i");
+          segment.className = "segment";
+          segment.style.left = `${Math.max(0, (visit.join - start) / width * 100)}%`;
+          segment.style.width = `${Math.max(0.4, Math.min(100, (visit.leave - visit.join) / width * 100))}%`;
+          track.append(segment);
+        }
+        for (const period of row.awayPeriods) {
+          const segment = document.createElement("i");
+          segment.className = "awaysegment";
+          segment.style.left = `${Math.max(0, (period.start - start) / width * 100)}%`;
+          segment.style.width = `${Math.max(0.4, Math.min(100, (period.end - period.start) / width * 100))}%`;
+          track.append(segment);
+        }
+        const title = document.createElement("p");
+        title.textContent = `${formatTime(row.joinedAt)} joined \xB7 ${formatTime(row.leftAt)} left \xB7 ${duration(row.totalSeconds)} total \xB7 ${row.rejoinCount} rejoin(s)`;
+        const away = document.createElement("p");
+        away.textContent = `${row.awayCount} away period(s), ${duration(row.awaySeconds)} total. Green bars show meeting visits; amber bars show away periods.`;
+        const status = document.createElement("p");
+        status.textContent = `${row.status.join(" \xB7 ")} \xB7 Focus ${row.focus == null ? "Unavailable" : `${row.focus}% (${row.focusLabel})`}`;
+        $("detail-content").replaceChildren(title, track, away, status);
+        $("student-detail").classList.remove("hidden");
+      }
+      function renderDeletionRequests(requests) {
+        const box = $("deletion-requests");
+        box.replaceChildren();
+        if (!requests.length) {
+          box.textContent = "No pending requests.";
+          return;
+        }
+        for (const item of requests) {
+          const row = document.createElement("p");
+          const text = document.createElement("span");
+          text.textContent = `${item.email} requested deletion on ${item.createdAt?.toDate?.().toLocaleString?.() ?? ""} `;
+          const approve = document.createElement("button");
+          approve.textContent = "Delete student data";
+          approve.className = "danger";
+          approve.addEventListener("click", async () => {
+            if (!confirm(`Delete ${item.email}'s attendance data and roster entry for this session?`)) return;
+            try {
+              await deleteDoc(doc(db, "sessions", item.sessionId, "students", item.email));
+              await deleteDoc(doc(db, "sessions", item.sessionId, "roster", item.email));
+              await updateDoc(doc(db, "sessions", item.sessionId, "deletionRequests", item.id), { status: "fulfilled", fulfilledAt: Timestamp.now() });
+            } catch (error) {
+              showMessage(`Could not fulfill request: ${error.message}`, true);
+            }
+          });
+          row.append(text, approve);
+          box.append(row);
+        }
+      }
+      function reportCsv() {
+        const headers = ["Name", "Email", "Status", "No SEEge activity detected", "In time", "Out time", "Total minutes", "Attendance %", "Rejoins", "Away count", "Away seconds", "Chat count", "Reaction count", "Mic opens", "Mic unmuted seconds", "Focus score", "Focus label"];
+        const rows = state.metrics.rows.map((row) => [row.name, row.email, row.status.join(" + "), row.noExtension ? "Yes" : "No", row.joinedAt ? new Date(row.joinedAt).toISOString() : "", row.leftAt ? new Date(row.leftAt).toISOString() : "", Math.round(row.totalSeconds / 60), row.attendancePct, row.rejoinCount, row.awayCount, row.awaySeconds, row.chatCount, row.reactionCount, row.micOpens, row.micUnmutedSeconds, row.focus, row.focusLabel]);
+        return makeCsv(headers, rows);
+      }
+      function downloadCsv(csv, session) {
+        const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `SEEge-${session.className.replace(/[^a-z0-9-_]+/gi, "-")}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.csv`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1e3);
+      }
+      function reportHtml(session) {
+        const metrics = state.metrics;
+        const lowest = [...metrics.rows].filter((row) => row.focus != null).sort((a, b2) => a.focus - b2.focus).slice(0, 3);
+        const rejoins = [...metrics.rows].sort((a, b2) => b2.rejoinCount - a.rejoinCount).slice(0, 3);
+        const noExtension = metrics.rows.filter((row) => row.noExtension).map((row) => safeText(row.name)).join(", ") || "None";
+        const table = metrics.rows.map((row) => `<tr><td>${safeText(row.name)}</td><td>${safeText(row.email)}</td><td>${safeText(row.status.join(" + "))}</td><td>${formatTime(row.joinedAt)}</td><td>${formatTime(row.leftAt)}</td><td>${duration(row.totalSeconds)}</td><td>${row.attendancePct}%</td><td>${row.rejoinCount}</td><td>${row.awayCount} / ${duration(row.awaySeconds)}</td><td>${row.chatCount ?? "Unavailable"}</td><td>${row.reactionCount ?? "Unavailable"}</td><td>${row.micOpens ?? "Unavailable"}</td><td>${row.micUnmutedSeconds == null ? "Unavailable" : duration(row.micUnmutedSeconds)}</td><td>${row.focus == null ? "Unavailable" : `${row.focus}% (${safeText(row.focusLabel)})`}</td><td>${row.noExtension ? "No SEEge activity detected" : ""}</td></tr>`).join("");
+        return `<h2>SEEge report: ${safeText(session.className)}</h2><p>${safeText(session.scheduledStart.toDate().toLocaleString())} \u2013 ${safeText((session.actualEnd ?? session.scheduledEnd).toDate().toLocaleString())}</p><p>Present ${metrics.present} \xB7 Late ${metrics.late} \xB7 Partial ${metrics.partial} \xB7 Absent ${metrics.absent}</p><h3>Lowest focus</h3><p>${lowest.map((x2) => `${safeText(x2.name)} (${x2.focus}%)`).join(", ") || "Unavailable"}</p><h3>Most rejoins</h3><p>${rejoins.map((x2) => `${safeText(x2.name)} (${x2.rejoinCount})`).join(", ")}</p><h3>No SEEge activity detected</h3><p>${noExtension}</p><table border="1" cellpadding="5"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>In</th><th>Out</th><th>Total</th><th>Attendance</th><th>Rejoins</th><th>Away</th><th>Chat</th><th>Reactions</th><th>Mic opens</th><th>Mic unmuted</th><th>Focus</th><th>Detection</th></tr></thead><tbody>${table}</tbody></table><p>No SEEge activity does not establish whether SEEge is installed. Focus is an indicator based on tab state and available participation counts, not proof of attention. Participation signal collection may be unavailable.</p>`;
+      }
+      async function sendEmail() {
+        const session = state.currentSession;
+        if (!session) return;
+        const csv = reportCsv();
+        const subject = `SEEge attendance report \u2014 ${session.className}`;
+        try {
+          const result = await chrome.runtime.sendMessage({ type: "sendReport", report: { subject, html: reportHtml(session), csv, filename: `SEEge-${session.className.replace(/[^a-z0-9-_]+/gi, "-")}.csv` } });
+          if (result?.error) throw new Error(result.error);
+          showMessage("Report emailed to the signed-in Gmail account with CSV attached.");
+        } catch (error) {
+          downloadCsv(csv, session);
+          const body = encodeURIComponent(`The SEEge CSV report has been downloaded and is ready to attach.
+
+Present ${state.metrics.present} \xB7 Late ${state.metrics.late} \xB7 Partial ${state.metrics.partial} \xB7 Absent ${state.metrics.absent}`);
+          const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(state.email)}&su=${encodeURIComponent(subject)}&body=${body}`;
+          chrome.tabs.create({ url });
+          showMessage(`Gmail API could not send (${error.message}). CSV downloaded and a prefilled Gmail draft opened; attach the CSV and send it.`);
+        }
+      }
+      async function setEnd(endedNow) {
+        const session = state.currentSession;
+        if (!session) return;
+        const actualEnd = endedNow ? Timestamp.now() : parseInputTime($("actual-end").value);
+        if (!isValidActualEnd(session.scheduledStart, actualEnd)) throw new Error("Actual end must be between the scheduled start and now.");
+        const intervals = [...session.meetIntervals ?? []];
+        const openIndex = intervals.findLastIndex((interval) => interval.end == null);
+        if (openIndex >= 0) intervals[openIndex] = { ...intervals[openIndex], end: actualEnd.toMillis() };
+        await updateDoc(doc(db, "sessions", session.id), { actualEnd, meetIntervals: intervals, status: "ended", updatedAt: Timestamp.now() });
+        await syncIndexes({ ...session, status: "ended", actualEnd });
       }
       async function init() {
         try {
           await auth.authStateReady();
           const user = auth.currentUser;
-          if (!user || !user.email) {
-            $("msg").textContent = "Not signed in. Sign in through the SEEge popup, then reload this page.";
+          if (!user?.email) {
+            showMessage("Sign in through the SEEge extension popup, then reload this dashboard.", true);
             return;
           }
-          const email = user.email.toLowerCase();
-          const teacherDoc = await getDoc(doc(db, "teachers", email));
-          if (!teacherDoc.exists()) {
-            $("msg").textContent = `${email} is not in the teacher list.`;
+          state.email = user.email.toLowerCase();
+          $("who").textContent = `Signed in as ${state.email}`;
+          const profile = (await chrome.storage.local.get(`profile:${state.email}`))[`profile:${state.email}`];
+          if (!profile?.consentAt || !profile?.name) {
+            showMessage("Complete the SEEge first-run name and consent setup in the extension popup, then reload this dashboard.", true);
             return;
           }
-          $("msg").hidden = true;
-          $("app").hidden = false;
-          $("who").textContent = email;
-          $("form").addEventListener("submit", async (event) => {
-            event.preventDefault();
-            const code = parseCode($("meet").value.trim());
-            if (!code) {
-              alert("Enter a valid Google Meet code, such as abc-defg-hij.");
-              return;
+          const teacher = await getDoc(doc(db, "teachers", state.email));
+          if (!teacher.exists()) {
+            showMessage("This Google account is not on the teacher allowlist.", true);
+            return;
+          }
+          $("app").classList.remove("hidden");
+          hideMessage();
+          $("session-form").addEventListener("submit", createSession);
+          $("roster-form").addEventListener("submit", updateRoster);
+          $("selector-form").addEventListener("submit", saveSelectors);
+          $("search").addEventListener("input", renderStudents);
+          $("status-filter").addEventListener("change", renderStudents);
+          document.querySelectorAll(".sort").forEach((button) => button.addEventListener("click", () => {
+            const key = button.dataset.sort;
+            state.sort = { key, direction: state.sort.key === key ? -state.sort.direction : 1 };
+            renderStudents();
+          }));
+          $("refresh").addEventListener("click", () => loadSessions().catch((error) => showMessage(error.message, true)));
+          $("close-detail").addEventListener("click", () => $("student-detail").classList.add("hidden"));
+          $("end-session").addEventListener("click", () => setEnd(true).catch((error) => showMessage(error.message, true)));
+          $("save-end").addEventListener("click", () => setEnd(false).catch((error) => showMessage(error.message, true)));
+          $("csv").addEventListener("click", () => state.currentSession && downloadCsv(reportCsv(), state.currentSession));
+          $("email").addEventListener("click", sendEmail);
+          state.timer = setInterval(() => {
+            if (!state.currentSession) return;
+            renderMetrics();
+            const session = state.currentSession;
+            const now = Date.now();
+            if (session.status === "scheduled" && now >= session.scheduledStart.toMillis() && now < session.scheduledEnd.toMillis()) updateDoc(doc(db, "sessions", session.id), { status: "live", updatedAt: Timestamp.now() }).catch(console.error);
+            if (session.status === "live" && now >= session.scheduledEnd.toMillis()) {
+              const intervals = [...session.meetIntervals ?? []];
+              const openIndex = intervals.findLastIndex((interval) => interval.end == null);
+              if (openIndex >= 0) intervals[openIndex] = { ...intervals[openIndex], end: session.scheduledEnd.toMillis() };
+              updateDoc(doc(db, "sessions", session.id), { actualEnd: session.scheduledEnd, meetIntervals: intervals, status: "ended", updatedAt: Timestamp.now() }).catch(console.error);
             }
-            const className = $("className").value.trim();
-            const start = new Date($("start").value);
-            const end = new Date($("end").value);
-            if (!className) {
-              alert("Enter a class name.");
-              return;
-            }
-            if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
-              alert("The scheduled end must be later than the scheduled start.");
-              return;
-            }
+          }, 5e3);
+          await loadSelectors();
+          await loadSessions();
+          setInterval(async () => {
             try {
-              await addDoc(collection(db, "sessions"), {
-                className,
-                meetCodes: [code],
-                scheduledStart: Timestamp.fromDate(start),
-                scheduledEnd: Timestamp.fromDate(end),
-                actualEnd: null,
-                teacherEmail: email,
-                status: "live",
-                thresholds: {
-                  presentPct: 75,
-                  lateMinutes: 10
-                },
-                createdAt: Timestamp.now()
-              });
-              $("form").reset();
+              await loadSessions();
             } catch (error) {
-              console.error("Could not create session:", error);
-              alert("Could not create session: " + error.message);
+              console.warn("Session refresh failed:", error.message);
             }
-          });
-          const sessionsQuery = query(
-            collection(db, "sessions"),
-            where("teacherEmail", "==", email)
-          );
-          onSnapshot(
-            sessionsQuery,
-            (snapshot) => {
-              const rows = $("rows");
-              rows.replaceChildren();
-              const sessions = snapshot.docs.map((item) => item.data()).sort(
-                (a, b2) => b2.scheduledStart.seconds - a.scheduledStart.seconds
-              );
-              for (const session of sessions) {
-                const row = document.createElement("tr");
-                for (const value of [
-                  session.className,
-                  (session.meetCodes ?? []).join(", "),
-                  session.scheduledStart.toDate().toLocaleString(),
-                  session.status
-                ]) {
-                  const cell = document.createElement("td");
-                  cell.textContent = value;
-                  row.appendChild(cell);
-                }
-                rows.appendChild(row);
-              }
-            },
-            (error) => {
-              console.error("Could not load sessions:", error);
-              $("msg").hidden = false;
-              $("msg").textContent = "Could not load sessions: " + error.message;
-            }
-          );
+          }, 6e4);
         } catch (error) {
-          console.error("Dashboard initialization failed:", error);
-          $("msg").textContent = "Dashboard error: " + error.message;
+          showMessage(`Dashboard initialization failed: ${error.message}`, true);
         }
       }
       init();

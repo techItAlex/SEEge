@@ -1,31 +1,36 @@
-
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SEEge</title>
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      width: 260px;
-      padding: 12px;
-      color: #222;
-    }
-
-    button {
-      width: 100%;
-      padding: 9px;
-      margin-top: 10px;
-      cursor: pointer;
-    }
+    body { width: 310px; margin: 0; padding: 16px; color: #202124; font: 14px/1.5 system-ui, sans-serif; }
+    h1 { margin: 0 0 8px; font-size: 20px; } p { margin: 8px 0 12px; }
+    label { display: block; margin: 12px 0 6px; font-weight: 650; }
+    input[type=text] { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #9aa0a6; border-radius: 6px; }
+    button { width: 100%; margin-top: 10px; padding: 9px; border: 0; border-radius: 6px; background: #1a73e8; color: white; cursor: pointer; font-weight: 650; }
+    button.secondary { color: #174ea6; background: #e8f0fe; }
+    .notice { padding: 10px; border-radius: 8px; background: #f1f3f4; font-size: 12px; }
+    .check { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; font-weight: 400; }
+    .check input { margin-top: 4px; }
+    #status { min-height: 20px; color: #5f6368; overflow-wrap: anywhere; }
+    a { color: #174ea6; }
   </style>
 </head>
 <body>
-  <h3>SEEge</h3>
-  <div id="status">Checking sign-in status...</div>
-  <button id="btn" hidden></button>
-  <p><a href="dashboard.html" target="_blank">Open dashboard</a></p>
+  <h1>SEEge</h1>
+  <div id="status" role="status">Checking sign-in status…</div>
+  <button id="authButton" hidden></button>
+  <form id="setup" hidden>
+    <p class="notice">Google sign-in sends your account email to Firebase Authentication. Activity tracking starts only after you save this consent and real name, and only for a rostered active class. SEEge uses this data to report class attendance and activity: your real name, consent time/version, meeting join/leave times, time away from the Meet tab, counts of chat sends, reactions, microphone openings, microphone-unmuted time when those Meet signals are available, and the extension version. It never stores chat text, audio, video, screenshots, or activity on other websites. Your class teacher can see your session activity and include it in a report sent to their own Gmail. Session data is scheduled for deletion after 90 days, though deletion may be delayed if the teacher's extension is not running. You may request deletion from the popup or contact the project maintainer through the SEEge GitHub repository. Focus is an indicator, not proof of attention.</p>
+    <label for="realName">Your real name</label>
+    <input id="realName" type="text" maxlength="100" autocomplete="name" required>
+    <label class="check"><input id="consent" type="checkbox" required><span>I understand what SEEge collects and consent to this monitoring when I join a monitored class.</span></label>
+    <button type="submit">Save consent and name</button>
+  </form>
+  <button id="deleteRequest" class="secondary" hidden>Request deletion of my latest session data</button>
+  <p><a href="dashboard.html" target="_blank">Open teacher dashboard</a></p>
   <script src="popup.js"></script>
 </body>
 </html>
