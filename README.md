@@ -1,4 +1,4 @@
-# SEEge
+# SEEge – A consent-first Chrome extension that shows teachers who is truly present, and truly paying attention, in Google Meet
 
 SEEge is a Manifest V3 Chrome extension for consent-based Google Meet attendance and activity monitoring. It stores attendance and count-only activity in Firebase Firestore, provides a teacher dashboard, and generates CSV/email reports.
 
