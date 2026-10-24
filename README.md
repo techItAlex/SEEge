@@ -2,6 +2,35 @@
 
 SEEge is a Manifest V3 Chrome extension for consent-based Google Meet attendance and activity monitoring. It stores attendance and count-only activity in Firebase Firestore, provides a teacher dashboard, and generates CSV/email reports.
 
+## Getting started
+
+Install the extension first (see [Local build](#local-build) below), then follow the guide for your role.
+
+### If you are a teacher
+
+1. **Get approved.** Only allowlisted accounts can open the teacher dashboard. Ask the SEEge administrator to add your Google email to the `teachers` collection in Firestore.
+2. **Sign in.** Click the SEEge icon in Chrome, sign in with your Google account, enter your real name, and accept the data notice.
+3. **Open the dashboard.** Click the SEEge icon and open the teacher dashboard.
+4. **Create a session.** Click **+ New session** and fill in:
+   - the class name and the Meet code (for example `abc-defg-hij`), plus the start and end times;
+   - your students as `name,email` rows, either pasted or uploaded as a CSV file. Use each student's Google account email;
+   - the grading rules, or keep the defaults. The three focus weights must add up to 100%.
+5. **Tell your class.** Tick the box confirming that students have been informed about SEEge. They must install the extension, sign in, and consent before they are tracked.
+6. **Keep Chrome open** during class. The session goes live at its start time and ends at its end time. Stay signed in to SEEge in Chrome while the class runs.
+7. **Watch the class.** Select the session in the sidebar to see who is present, late, or absent, with focus scores and live activity. Use **Details** on a student for a timeline.
+8. **Fix the roster.** If a student is missing or has the wrong email, use the **Roster** card to add or replace entries. They are picked up the next time the student reloads their Meet tab.
+9. **Finish up.** Click **End class now** (or let the schedule end it), then **Download CSV** or **Email report**. If the email cannot be sent, the CSV is downloaded and a Gmail draft opens.
+
+### If you are a student
+
+1. **Install SEEge** from the `dist/` folder as described in [Local build](#local-build), or from the link your teacher gives you.
+2. **Sign in.** Click the SEEge icon and sign in with the **same Google email your teacher put on the class roster**. A different email will not be tracked.
+3. **Set up once.** Enter your real name, read the notice about what is collected, and tick the consent box.
+4. **Join the class.** Open the Google Meet link from your teacher and join the call during the class time. While you are in the call, a banner at the top of the page says *Your activity in this class is being monitored.* If you don't see the banner, reload the Meet tab.
+5. **Stay in the Meet tab.** SEEge records when you join and leave, how many times you switch away from the tab, and counts of chat messages, reactions, and microphone use. It never records message text, audio, or video.
+6. **If you are not tracked,** check that you used the right email, that the class is currently scheduled, and that you finished step 3.
+7. **Ask for your data to be deleted.** Open the SEEge popup and use the deletion request button. This stops monitoring for that class on your device and asks your teacher to delete your attendance data.
+
 ## Local build
 
 ```sh
