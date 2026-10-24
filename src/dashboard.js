@@ -48,13 +48,26 @@ async function cleanupExpiredSessions(sessions) {
   }
 }
 
+function showView(view) {
+  $("create-card").classList.toggle("hidden", view !== "create");
+  $("selected").classList.toggle("hidden", view !== "session");
+  $("empty").classList.toggle("hidden", view !== "empty");
+}
+
+function setDefaultTimes() {
+  const now = new Date(); now.setSeconds(0, 0);
+  $("scheduled-start").value = toInputTime(now);
+  $("scheduled-end").value = toInputTime(new Date(now.getTime() + 60 * 60_000));
+}
+
 function renderSessions() {
   const box = $("sessions"); box.replaceChildren();
   if (!state.sessions.length) { box.textContent = "No sessions yet."; return; }
   for (const session of state.sessions) {
     const button = document.createElement("button");
-    button.className = `secondary${session.id === state.selected ? " session-selected" : ""}`;
-    button.textContent = `${session.className} · ${session.status} · ${session.scheduledStart?.toDate?.().toLocaleString?.() ?? ""}`;
+    button.className = `session-item${session.id === state.selected ? " active" : ""}`;
+    const when = session.scheduledStart?.toDate?.().toLocaleString?.([], { dateStyle: "medium", timeStyle: "short" }) ?? "";
+    button.innerHTML = `<b>${safeText(session.className)}</b><span class="pill ${safeText(session.status)}">${safeText(session.status)}</span><small>${safeText(when)}</small>`;
     button.addEventListener("click", () => selectSession(session.id));
     box.append(button);
   }
@@ -70,7 +83,7 @@ async function loadSessions() {
 
 async function createSession(event) {
   event.preventDefault();
-  const output = $("create-result"); output.textContent = "Creating…";
+  const output = $("create-result"); output.textContent = "Creating…"; output.classList.remove("bad");
   try {
     if (!$('informed').checked) throw new Error("Confirm that your class has been informed first.");
     const start = parseInputTime($("scheduled-start").value);
@@ -107,6 +120,7 @@ async function createSession(event) {
     $("session-form").reset();
     $("late-minutes").value = 10; $("present-percent").value = 75; $("participation-target").value = 5;
     $("focus-screen").value = 60; $("focus-participation").value = 25; $("focus-stability").value = 15;
+    setDefaultTimes();
     output.textContent = `Created with ${roster.length} roster entries.`;
     await loadSessions(); await selectSession(ref.id);
   } catch (error) { output.textContent = error.message; output.classList.add("bad"); }
@@ -116,10 +130,10 @@ function stopSelectedListeners() { state.stops.forEach(stop => stop()); state.st
 
 async function selectSession(id) {
   stopSelectedListeners();
-  state.selected = id; renderSessions(); $("selected").classList.remove("hidden");
+  state.selected = id; renderSessions(); showView("session");
   const ref = doc(db, "sessions", id);
   state.sessionStop = onSnapshot(ref, snapshot => {
-    if (!snapshot.exists()) { $("selected").classList.add("hidden"); return; }
+    if (!snapshot.exists()) { showView("empty"); return; }
     const session = { id, ...snapshot.data() };
     const existing = state.sessions.findIndex(item => item.id === id);
     if (existing >= 0) state.sessions[existing] = session;
@@ -133,7 +147,7 @@ async function selectSession(id) {
     }
   }, error => showMessage(`Session listener failed: ${error.message}`, true));
   state.stops.push(onSnapshot(collection(db, "sessions", id, "roster"), snapshot => {
-    state.roster = snapshot.docs.map(item => ({ email: item.id, ...item.data() })); renderMetrics();
+    state.roster = snapshot.docs.map(item => ({ email: item.id, ...item.data() })); renderRosterList(); renderMetrics();
   }, error => showMessage(`Roster could not load: ${error.message}`, true)));
   state.stops.push(onSnapshot(collection(db, "sessions", id, "students"), snapshot => {
     state.students = new Map(snapshot.docs.map(item => [item.id.toLowerCase(), { email: item.id, ...item.data() }])); renderMetrics();
@@ -144,7 +158,9 @@ async function selectSession(id) {
 function renderSession(session) {
   state.currentSession = session;
   $("session-title").textContent = session.className;
-  $("session-meta").textContent = `${(session.meetCodes ?? []).join(", ")} · ${session.scheduledStart.toDate().toLocaleString()} – ${session.scheduledEnd.toDate().toLocaleString()} · ${session.status}`;
+  $("session-meta").textContent = `Meet: ${(session.meetCodes ?? []).join(", ")} · ${session.scheduledStart.toDate().toLocaleString()} – ${session.scheduledEnd.toDate().toLocaleString()}`;
+  $("session-status").textContent = session.status;
+  $("session-status").className = `pill ${session.status}`;
   $("actual-end").value = toInputTime(session.actualEnd);
   $("end-session").disabled = session.status === "ended";
   $("end-session").textContent = session.status === "ended" ? "Class ended" : "End class now";
@@ -154,9 +170,21 @@ function renderSession(session) {
   $("signals").textContent = unavailable ? `Participation unavailable for ${unavailable} student(s) until Meet selectors are configured.` : "Participation signal configuration is available.";
 }
 
+function renderRosterList() {
+  const list = $("roster-list"); list.replaceChildren();
+  const roster = [...state.roster].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+  $("roster-count").textContent = `${roster.length} student${roster.length === 1 ? "" : "s"} listed.`;
+  for (const entry of roster) {
+    const item = document.createElement("li");
+    const name = document.createElement("span"); name.textContent = entry.name ?? "";
+    const email = document.createElement("small"); email.textContent = entry.email;
+    item.append(name, email); list.append(item);
+  }
+}
+
 async function updateRoster(event) {
   event.preventDefault();
-  const result = $("roster-result"); result.textContent = "Saving…";
+  const result = $("roster-result"); result.textContent = "Saving…"; result.classList.remove("bad");
   try {
     const file = $("roster-file-edit").files[0];
     const text = file ? await file.text() : $("roster-text-edit").value;
@@ -373,6 +401,9 @@ async function init() {
       state.sort = { key, direction: state.sort.key === key ? -state.sort.direction : 1 };
       renderStudents();
     }));
+    $("new-session").addEventListener("click", () => { setDefaultTimes(); showView("create"); });
+    $("cancel-create").addEventListener("click", () => showView(state.selected ? "session" : "empty"));
+    setDefaultTimes();
     $("refresh").addEventListener("click", () => loadSessions().catch(error => showMessage(error.message, true)));
     $("close-detail").addEventListener("click", () => $("student-detail").classList.add("hidden"));
     $("end-session").addEventListener("click", () => setEnd(true).catch(error => showMessage(error.message, true)));
@@ -392,6 +423,8 @@ async function init() {
     }, 5000);
     await loadSelectors();
     await loadSessions();
+    if (!state.sessions.length) showView("create");
+    else await selectSession((state.sessions.find(item => item.status === "live") ?? state.sessions[0]).id);
     // A newly created scheduled session can become live/end without the page being reopened.
     setInterval(async () => { try { await loadSessions(); } catch (error) { console.warn("Session refresh failed:", error.message); } }, 60_000);
   } catch (error) { showMessage(`Dashboard initialization failed: ${error.message}`, true); }

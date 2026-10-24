@@ -12246,17 +12246,32 @@
       async function flushQueue(key) {
         const pending = (await chrome.storage.local.get(key))[key];
         if (!pending) return;
-        const session = await getDoc(doc(db, "sessions", pending.sessionId));
+        const step = async (label, run) => {
+          try {
+            return await run();
+          } catch (error) {
+            error.message = `${label}: ${error.message}`;
+            throw error;
+          }
+        };
+        const consent = pending.record.consentAt;
+        const record = {
+          ...pending.record,
+          consentAt: consent instanceof Timestamp ? consent : new Timestamp(consent.seconds, consent.nanoseconds),
+          lastHeartbeat: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+        const session = await step(`read session ${pending.sessionId}`, () => getDoc(doc(db, "sessions", pending.sessionId)));
         if (!session.exists() || session.data().status !== "live" || Date.now() >= session.data().scheduledEnd.toMillis() || session.data().actualEnd && Date.now() >= session.data().actualEnd.toMillis()) {
           await chrome.storage.local.remove(key);
           throw new Error("TRACKING_STOPPED: the class is no longer live.");
         }
-        const rosterEntry = await getDoc(doc(db, "sessions", pending.sessionId, "roster", pending.record.email));
+        const rosterEntry = await step(`read roster ${pending.record.email}`, () => getDoc(doc(db, "sessions", pending.sessionId, "roster", pending.record.email)));
         if (!rosterEntry.exists()) {
           await chrome.storage.local.remove(key);
           throw new Error("TRACKING_STOPPED: this student is no longer on the session roster.");
         }
-        await setDoc(doc(db, "sessions", pending.sessionId, "students", pending.record.email), pending.record, { merge: true });
+        await step(`write students/${pending.record.email}`, () => setDoc(doc(db, "sessions", pending.sessionId, "students", pending.record.email), record, { merge: true }));
         await chrome.storage.local.remove(key);
       }
       async function flushAll() {

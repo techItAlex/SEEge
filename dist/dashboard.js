@@ -31512,6 +31512,17 @@ This typically indicates that your device does not have a healthy Internet conne
           await deleteDoc(doc(db, "sessions", item.id));
         }
       }
+      function showView(view) {
+        $("create-card").classList.toggle("hidden", view !== "create");
+        $("selected").classList.toggle("hidden", view !== "session");
+        $("empty").classList.toggle("hidden", view !== "empty");
+      }
+      function setDefaultTimes() {
+        const now = /* @__PURE__ */ new Date();
+        now.setSeconds(0, 0);
+        $("scheduled-start").value = toInputTime(now);
+        $("scheduled-end").value = toInputTime(new Date(now.getTime() + 60 * 6e4));
+      }
       function renderSessions() {
         const box = $("sessions");
         box.replaceChildren();
@@ -31521,8 +31532,9 @@ This typically indicates that your device does not have a healthy Internet conne
         }
         for (const session of state.sessions) {
           const button = document.createElement("button");
-          button.className = `secondary${session.id === state.selected ? " session-selected" : ""}`;
-          button.textContent = `${session.className} \xB7 ${session.status} \xB7 ${session.scheduledStart?.toDate?.().toLocaleString?.() ?? ""}`;
+          button.className = `session-item${session.id === state.selected ? " active" : ""}`;
+          const when = session.scheduledStart?.toDate?.().toLocaleString?.([], { dateStyle: "medium", timeStyle: "short" }) ?? "";
+          button.innerHTML = `<b>${safeText(session.className)}</b><span class="pill ${safeText(session.status)}">${safeText(session.status)}</span><small>${safeText(when)}</small>`;
           button.addEventListener("click", () => selectSession(session.id));
           box.append(button);
         }
@@ -31538,6 +31550,7 @@ This typically indicates that your device does not have a healthy Internet conne
         event.preventDefault();
         const output = $("create-result");
         output.textContent = "Creating\u2026";
+        output.classList.remove("bad");
         try {
           if (!$("informed").checked) throw new Error("Confirm that your class has been informed first.");
           const start = parseInputTime($("scheduled-start").value);
@@ -31586,6 +31599,7 @@ This typically indicates that your device does not have a healthy Internet conne
           $("focus-screen").value = 60;
           $("focus-participation").value = 25;
           $("focus-stability").value = 15;
+          setDefaultTimes();
           output.textContent = `Created with ${roster.length} roster entries.`;
           await loadSessions();
           await selectSession(ref.id);
@@ -31604,11 +31618,11 @@ This typically indicates that your device does not have a healthy Internet conne
         stopSelectedListeners();
         state.selected = id;
         renderSessions();
-        $("selected").classList.remove("hidden");
+        showView("session");
         const ref = doc(db, "sessions", id);
         state.sessionStop = onSnapshot(ref, (snapshot) => {
           if (!snapshot.exists()) {
-            $("selected").classList.add("hidden");
+            showView("empty");
             return;
           }
           const session = { id, ...snapshot.data() };
@@ -31627,6 +31641,7 @@ This typically indicates that your device does not have a healthy Internet conne
         }, (error) => showMessage(`Session listener failed: ${error.message}`, true));
         state.stops.push(onSnapshot(collection(db, "sessions", id, "roster"), (snapshot) => {
           state.roster = snapshot.docs.map((item) => ({ email: item.id, ...item.data() }));
+          renderRosterList();
           renderMetrics();
         }, (error) => showMessage(`Roster could not load: ${error.message}`, true)));
         state.stops.push(onSnapshot(collection(db, "sessions", id, "students"), (snapshot) => {
@@ -31640,7 +31655,9 @@ This typically indicates that your device does not have a healthy Internet conne
       function renderSession(session) {
         state.currentSession = session;
         $("session-title").textContent = session.className;
-        $("session-meta").textContent = `${(session.meetCodes ?? []).join(", ")} \xB7 ${session.scheduledStart.toDate().toLocaleString()} \u2013 ${session.scheduledEnd.toDate().toLocaleString()} \xB7 ${session.status}`;
+        $("session-meta").textContent = `Meet: ${(session.meetCodes ?? []).join(", ")} \xB7 ${session.scheduledStart.toDate().toLocaleString()} \u2013 ${session.scheduledEnd.toDate().toLocaleString()}`;
+        $("session-status").textContent = session.status;
+        $("session-status").className = `pill ${session.status}`;
         $("actual-end").value = toInputTime(session.actualEnd);
         $("end-session").disabled = session.status === "ended";
         $("end-session").textContent = session.status === "ended" ? "Class ended" : "End class now";
@@ -31649,10 +31666,26 @@ This typically indicates that your device does not have a healthy Internet conne
         const unavailable = state.metrics?.rows.filter((row) => !row.participationAvailable).length ?? 0;
         $("signals").textContent = unavailable ? `Participation unavailable for ${unavailable} student(s) until Meet selectors are configured.` : "Participation signal configuration is available.";
       }
+      function renderRosterList() {
+        const list = $("roster-list");
+        list.replaceChildren();
+        const roster = [...state.roster].sort((a, b2) => (a.name ?? "").localeCompare(b2.name ?? ""));
+        $("roster-count").textContent = `${roster.length} student${roster.length === 1 ? "" : "s"} listed.`;
+        for (const entry of roster) {
+          const item = document.createElement("li");
+          const name4 = document.createElement("span");
+          name4.textContent = entry.name ?? "";
+          const email = document.createElement("small");
+          email.textContent = entry.email;
+          item.append(name4, email);
+          list.append(item);
+        }
+      }
       async function updateRoster(event) {
         event.preventDefault();
         const result = $("roster-result");
         result.textContent = "Saving\u2026";
+        result.classList.remove("bad");
         try {
           const file = $("roster-file-edit").files[0];
           const text = file ? await file.text() : $("roster-text-edit").value;
@@ -31940,6 +31973,12 @@ Present ${state.metrics.present} \xB7 Late ${state.metrics.late} \xB7 Partial ${
             state.sort = { key, direction: state.sort.key === key ? -state.sort.direction : 1 };
             renderStudents();
           }));
+          $("new-session").addEventListener("click", () => {
+            setDefaultTimes();
+            showView("create");
+          });
+          $("cancel-create").addEventListener("click", () => showView(state.selected ? "session" : "empty"));
+          setDefaultTimes();
           $("refresh").addEventListener("click", () => loadSessions().catch((error) => showMessage(error.message, true)));
           $("close-detail").addEventListener("click", () => $("student-detail").classList.add("hidden"));
           $("end-session").addEventListener("click", () => setEnd(true).catch((error) => showMessage(error.message, true)));
@@ -31961,6 +32000,8 @@ Present ${state.metrics.present} \xB7 Late ${state.metrics.late} \xB7 Partial ${
           }, 5e3);
           await loadSelectors();
           await loadSessions();
+          if (!state.sessions.length) showView("create");
+          else await selectSession((state.sessions.find((item) => item.status === "live") ?? state.sessions[0]).id);
           setInterval(async () => {
             try {
               await loadSessions();
