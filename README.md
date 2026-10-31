@@ -1,6 +1,61 @@
-# SEEge – A consent-first Chrome extension that shows professors/instructors who is truly present, and truly paying attention, in Google Meet
+<div align="center">
+
+<img src="docs/images/logo.svg" width="88" alt="SEEge logo: an eye with a yellow pupil">
+
+# SEEge
+
+**A consent-first Chrome extension that shows professors/instructors who is truly present, and truly paying attention, in Google Meet.**
+
+![Manifest V3](https://img.shields.io/badge/Chrome-Manifest%20V3-3347e8?style=flat-square)
+![Firebase](https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-ffca28?style=flat-square&logo=firebase&logoColor=white)
+![No server](https://img.shields.io/badge/Cloud%20Functions-none-11966a?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-22%20passing-11966a?style=flat-square)
+
+[Getting started](#getting-started) · [How it works](#how-it-works) · [Local build](#local-build) · [Firebase setup](#firebase-setup) · [Privacy and limits](#security-retention-and-limits)
+
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/signin-dark.png">
+  <img src="docs/images/signin-light.png" alt="SEEge sign-in page with a sample roll-call timeline" width="900">
+</picture>
+
+</div>
+
+<br>
 
 SEEge is a Manifest V3 Chrome extension for consent-based Google Meet attendance and activity monitoring. It stores attendance and count-only activity in Firebase Firestore, provides a teacher dashboard, and generates CSV/email reports.
+
+## Why SEEge
+
+| | |
+|---|---|
+| **Students opt in** | Nothing is tracked until a student signs in, enters their real name and consents. A banner shows on the Meet page whenever tracking is active. |
+| **Counts, not content** | SEEge records join and leave times, time away from the Meet tab, and counts of chat sends, reactions and microphone openings. It never stores chat text, audio, video or screenshots. |
+| **Free to run** | The extension talks to Firebase directly. There are no Cloud Functions or servers to pay for, and data is scheduled for deletion after 90 days. |
+
+## See it in action
+
+### Teacher dashboard
+
+<div align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-dark.png">
+  <img src="docs/images/dashboard-light.png" alt="Teacher dashboard showing attendance summary, focus scores and a student table" width="900">
+</picture>
+</div>
+
+Live attendance, focus scores, a per-student table, roster management and one-click CSV or email reports. *Screenshots use sample students, not real data.*
+
+### Student popup
+
+<div align="center">
+<img src="docs/images/popup-signin.png" alt="Popup step 1: sign in with Google" width="29%">
+<img src="docs/images/popup-consent.png" alt="Popup step 2: add your name and consent" width="29%">
+<img src="docs/images/popup-ready.png" alt="Popup step 3: join your class" width="29%">
+</div>
+
+Three steps, once: sign in with Google, add your name and consent, then join your class.
 
 ## Getting started
 
@@ -11,7 +66,7 @@ Install the extension first (see [Local build](#local-build) below), then follow
 1. **Get approved.** Only allowlisted accounts can open the teacher dashboard. Ask the SEEge administrator to add your Google email to the `teachers` collection in Firestore.
 2. **Sign in.** Click the SEEge icon in Chrome, sign in with your Google account, enter your real name, and accept the data notice.
 3. **Open the dashboard.** Click the SEEge icon and open the teacher dashboard.
-4. **Create a session.** Click **+ New session** and fill in:
+4. **Create a session.** Click **New session** and fill in:
    - the class name and the Meet code (for example `abc-defg-hij`), plus the start and end times;
    - your students as `name,email` rows, either pasted or uploaded as a CSV file. Use each student's Google account email;
    - the grading rules, or keep the defaults. The three focus weights must add up to 100%.
@@ -31,6 +86,22 @@ Install the extension first (see [Local build](#local-build) below), then follow
 6. **If you are not tracked,** check that you used the right email, that the class is currently scheduled, and that you finished step 3.
 7. **Ask for your data to be deleted.** Open the SEEge popup and use the deletion request button. This stops monitoring for that class on your device and asks your teacher to delete your attendance data.
 
+## How it works
+
+```mermaid
+flowchart LR
+    S["Student's Meet tab<br/>content script"] -->|"join, leave, away,<br/>counts"| B["Extension<br/>service worker"]
+    B -->|"consented, rostered,<br/>live class only"| F[("Firebase<br/>Firestore")]
+    F -->|"live updates"| D["Teacher<br/>dashboard"]
+    D -->|"on demand"| R["CSV and<br/>Gmail report"]
+```
+
+- The content script watches the Meet page for the join button, tab focus, and the optional chat, reaction and microphone signals.
+- The service worker checks the roster and session, then writes only that student's own activity record. Firestore security rules enforce this, so a student can never read or change someone else's data.
+- The dashboard listens to the session live and works out attendance status and focus scores from the records.
+
+**Built with:** Chrome Manifest V3, Firebase Authentication and Firestore (no Cloud Functions), esbuild, the Node test runner, and the Firestore Emulator for rules tests. The interface uses the self-hosted Bricolage Grotesque variable font, so no page loads anything from outside the extension.
+
 ## Local build
 
 ```sh
@@ -40,6 +111,8 @@ npm run build
 ```
 
 In Chrome, open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select this repository's `dist/` folder. Keep `dist/` because it is the directly loadable extension build. `npm run build` copies `public/` to `dist/` and bundles `src/` with esbuild.
+
+To see the full-page sign-in layout, open the extension's `popup.html` in a browser tab, or use **Open full page** in the popup.
 
 ## Firebase setup
 
@@ -52,14 +125,6 @@ The app uses the existing SEEge Firebase project configuration in `src/firebase.
 5. The dashboard requests `gmail.send` only when the teacher clicks **Email report** (the student sign-in token remains limited to basic profile/email scopes). The OAuth consent configuration must permit this scope. Gmail's sensitive-scope consent screen and the account's first authorization require a real Google account; test-mode authorization can expire and need reauthorization. The dashboard downloads the CSV and opens a prefilled Gmail draft if the API send fails.
 
 The Chrome extension performs Firestore calls from its extension origin. Its API host permissions are listed in the manifest. Do not broaden them unless the Firebase SDK requires it and the reason is reviewed.
-
-## Teacher workflow
-
-1. Sign in from the extension popup, enter the teacher's real name, and acknowledge the same first-run data notice.
-2. Open the dashboard. Create a session with class name, one or more comma-separated Meet codes, scheduled times, thresholds, and a roster CSV with `name,email` columns. The teacher must confirm that students have been informed.
-3. The roster is matched by normalized Google email. Students must install SEEge, sign in, enter their real name, and consent before they are tracked.
-4. Select a session to see live metrics. End it manually, or leave it open for schedule end / teacher final-departure handling. Correct the actual end time if needed.
-5. Download the full CSV or email the report to the signed-in teacher account. If Gmail authorization or sending fails, attach the downloaded CSV to the opened draft.
 
 ## Meet participation selectors
 
