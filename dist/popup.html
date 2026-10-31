@@ -11,8 +11,9 @@
     body { width: 392px; padding: 18px; }
     .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .top a.dash { font-weight: 650; font-size: 13px; }
-    .intro, .roll { display: none; }
+    .intro, .right { display: none; }
     .shell { margin-top: 16px; display: grid; gap: 14px; }
+    .left { display: grid; gap: 10px; }
 
     .flow { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 6px 18px; }
     .steps { list-style: none; margin: 0; padding: 0; }
@@ -46,36 +47,44 @@
     #deleteRequest { margin-top: 12px; font-size: 13px; }
 
     #status { min-height: 20px; padding: 0 4px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+    #status:empty { display: none; }
     #status.error { color: var(--red); }
 
-    .privacy { background: transparent; border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; }
+    /* Privacy: one details block in the popup, four plain sections on the full page. */
+    .privacy { border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; margin-top: 14px; }
     .privacy summary { cursor: pointer; font-weight: 650; }
-    .privacy-grid { display: grid; gap: 14px; margin-top: 12px; }
+    .privacy-grid { display: grid; gap: 16px; margin-top: 14px; }
     .privacy h3 { font-size: 15px; margin-bottom: 6px; }
     .privacy ul { margin: 0; padding-left: 18px; color: var(--muted); }
-    .privacy li + li { margin-top: 3px; }
-    .privacy .fine { color: var(--muted); font-size: 12.5px; margin-top: 12px; }
+    .privacy li + li { margin-top: 4px; }
 
-    .foot { margin-top: 14px; display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; }
-    .foot a { color: var(--muted); }
+    .foot { margin-top: 14px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; font-size: 12.5px; }
+    .foot a, .foot span { color: var(--muted); }
+    .foot span { flex-basis: 100%; order: -1; }
 
     /* Roll-call preview: sample data drawn the way the dashboard draws real attendance. */
-    .roll { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 22px 24px 18px; }
+    .roll { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 24px 26px 20px; }
     .roll-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .roll-head h2 { font-size: 20px; }
+    .roll-head h2 { font-size: 22px; }
     .roll-sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
-    .roll-rows { margin-top: 20px; display: grid; gap: 14px; }
-    .roll-row { display: grid; grid-template-columns: 82px 1fr 92px; align-items: center; gap: 14px; }
+    .roll-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; }
+    .roll-stat { background: var(--soft); border-radius: var(--r-md); padding: 10px 14px; }
+    .roll-stat span { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); }
+    .roll-stat span::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dot); }
+    .roll-stat b { display: block; font-size: 28px; line-height: 1.1; letter-spacing: -0.03em; margin-top: 4px; }
+    .roll-rows { margin-top: 22px; display: grid; gap: 14px; }
+    .roll-row { display: grid; grid-template-columns: 78px 1fr 70px; align-items: center; gap: 14px; }
     .who { font-weight: 650; }
     .track { position: relative; height: 22px; border-radius: 7px; background: var(--soft); overflow: hidden; }
     .track i { position: absolute; top: 0; bottom: 0; left: var(--l); width: var(--w); background: var(--green); border-radius: 5px; transform-origin: left center; animation: grow .9s cubic-bezier(.2,.7,.2,1) both; animation-delay: var(--d, 0s); }
     .track i.away { background: var(--amber); border-radius: 3px; animation-name: fade; animation-delay: calc(var(--d, 0s) + .7s); }
     .track.none { background: transparent; border: 1.5px dashed var(--line); display: flex; align-items: center; padding-left: 10px; font-size: 12px; color: var(--muted); }
     .tag { font-size: 12.5px; font-weight: 650; text-align: right; }
-    .axis { position: relative; height: 18px; margin: 12px 92px 0 96px; font-size: 11.5px; color: var(--muted); }
+    .axis { position: relative; height: 18px; margin: 12px 70px 0 92px; font-size: 11.5px; color: var(--muted); }
     .axis span { position: absolute; transform: translateX(-50%); }
     .axis span:first-child { transform: none; } .axis span:last-child { transform: translateX(-100%); }
-    .key { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+    .key { display: flex; justify-content: space-between; gap: 8px 18px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+    .key div { display: flex; gap: 18px; flex-wrap: wrap; }
     .key b { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 7px; vertical-align: -1px; }
     @keyframes grow { from { transform: scaleX(0); } }
     @keyframes fade { from { opacity: 0; } }
@@ -83,26 +92,32 @@
     /* Full-page layout */
     @media (min-width: 760px) {
       body { width: auto; padding: 0; }
-      .page { max-width: 1200px; margin: 0 auto; padding: 28px clamp(24px, 5vw, 56px) 40px; }
+      .page { max-width: 1280px; margin: 0 auto; padding: 28px clamp(24px, 5vw, 64px) 32px; }
       .top .brand { font-size: 24px; } .top .brand svg { width: 40px; height: 40px; }
-      .top a.dash { padding: 8px 14px; border: 1px solid var(--line); border-radius: var(--r-sm); text-decoration: none; color: var(--ink); }
+      .top a.dash { padding: 8px 14px; border: 1px solid var(--line); border-radius: var(--r-sm); text-decoration: none; color: var(--ink); background: var(--card); }
       .top a.dash:hover { background: var(--soft); }
-      .shell { margin-top: clamp(28px, 6vh, 64px); grid-template-columns: minmax(0, 500px) minmax(0, 1fr); gap: 56px; align-items: start; }
-      .left { display: grid; gap: 28px; }
+      .shell { margin-top: clamp(32px, 7vh, 72px); grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: clamp(32px, 5vw, 72px); align-items: center; }
+      .left { gap: 30px; }
       .intro { display: block; }
-      .intro h1 { font-size: clamp(36px, 4.6vw, 58px); letter-spacing: -0.035em; line-height: 1.02; font-weight: 750; text-wrap: balance; }
-      .lede { margin-top: 18px; font-size: 18px; line-height: 1.5; color: var(--muted); max-width: 46ch; }
-      .roll { display: block; }
-      .right { display: grid; gap: 22px; }
-      .privacy { background: var(--card); padding: 22px 24px; border-radius: var(--r-lg); }
+      .intro h1 { font-size: clamp(38px, 4.4vw, 60px); letter-spacing: -0.035em; line-height: 1.02; font-weight: 750; text-wrap: balance; }
+      .lede { margin-top: 18px; font-size: 18px; line-height: 1.5; color: var(--muted); max-width: 44ch; }
+      .flow { padding: 8px 24px; }
+      .step { padding: 18px 0; grid-template-columns: 34px 1fr; gap: 0 14px; }
+      .marker { width: 34px; height: 34px; }
+      .step-title { font-size: 18px; line-height: 34px; }
+      .step-body { margin-top: 6px; }
+      .right { display: block; }
+      .privacy { background: var(--card); border-radius: var(--r-lg); padding: 28px 32px; margin-top: clamp(48px, 9vh, 88px); }
       .privacy summary { display: none; }
-      .privacy-grid { grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 0; }
-      .privacy h3 { font-size: 17px; margin-bottom: 8px; }
+      .privacy-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; margin-top: 0; }
+      .privacy h3 { font-size: 17px; margin-bottom: 10px; }
       .only-popup { display: none; }
-      .foot { margin-top: 36px; }
+      .foot { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--line); }
+      .foot span { flex-basis: auto; order: 0; }
     }
     @media (min-width: 760px) and (max-width: 1040px) {
-      .shell { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+      .shell { grid-template-columns: minmax(0, 1fr); align-items: start; }
+      .privacy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -164,10 +179,16 @@
     </div>
 
     <div class="right">
-      <section class="roll" role="img" aria-label="Sample attendance timeline for a class of five students: three present, one left early, one with no activity.">
+      <section class="roll" role="img" aria-label="Sample attendance timeline for a class of five students: two present, one late, one partial, one with no activity.">
         <div class="roll-head">
           <div><h2>Physics 101</h2><p class="roll-sub">Sample class, 3:00 to 3:30 PM</p></div>
           <span class="pill live">live</span>
+        </div>
+        <div class="roll-stats">
+          <div class="roll-stat" style="--dot:var(--green)"><span>Present</span><b>2</b></div>
+          <div class="roll-stat" style="--dot:var(--amber)"><span>Late</span><b>1</b></div>
+          <div class="roll-stat" style="--dot:var(--blue)"><span>Partial</span><b>1</b></div>
+          <div class="roll-stat" style="--dot:var(--red)"><span>Absent</span><b>1</b></div>
         </div>
         <div class="roll-rows">
           <div class="roll-row"><span class="who">Maya R.</span><div class="track"><i style="--l:0%;--w:100%;--d:.1s"></i><i class="away" style="--l:40%;--w:8%;--d:.1s"></i></div><span class="tag good">Present</span></div>
@@ -177,37 +198,52 @@
           <div class="roll-row"><span class="who">Ana T.</span><div class="track none">No SEEge activity detected</div><span class="tag bad">Absent</span></div>
         </div>
         <div class="axis"><span style="left:0">3:00</span><span style="left:33.3%">3:10</span><span style="left:66.6%">3:20</span><span style="left:100%">3:30</span></div>
-        <div class="key"><span><b style="background:var(--green)"></b>In the call</span><span><b style="background:var(--amber)"></b>Away from the Meet tab</span></div>
+        <div class="key"><div><span><b style="background:var(--green)"></b>In the call</span><span><b style="background:var(--amber)"></b>Away from the Meet tab</span></div><span>Sample data</span></div>
       </section>
-
-      <details class="privacy" id="privacy">
-        <summary>What SEEge records and why</summary>
-        <div class="privacy-grid">
-          <div>
-            <h3>What it records</h3>
-            <ul>
-              <li>Your real name and when you consented</li>
-              <li>When you join and leave a monitored Meet</li>
-              <li>How long you are away from the Meet tab</li>
-              <li>Counts of chat sends, reactions and microphone openings, when Meet exposes them</li>
-            </ul>
-          </div>
-          <div>
-            <h3>What it never records</h3>
-            <ul>
-              <li>Chat text, audio, video or screenshots</li>
-              <li>Anything you do on other websites</li>
-              <li>Any class you are not rostered in</li>
-            </ul>
-          </div>
-        </div>
-        <p class="fine">Sign-in sends your account email to Firebase Authentication. Tracking starts only after you save consent and your name, and only for an active class you are rostered in. Your teacher can see your session activity and send it in a report to their own Gmail. Session data is scheduled for deletion after 90 days, though deletion can be delayed if the teacher's extension is not running. You can request deletion from this popup, or contact the maintainer through the SEEge GitHub repository. Focus is an indicator, not proof of attention.</p>
-      </details>
     </div>
   </div>
 
+  <details class="privacy" id="privacy">
+    <summary>What SEEge records and why</summary>
+    <div class="privacy-grid">
+      <div>
+        <h3>What it records</h3>
+        <ul>
+          <li>Your real name and when you consented</li>
+          <li>When you join and leave a monitored Meet</li>
+          <li>How long you are away from the Meet tab</li>
+          <li>Counts of chat sends, reactions and microphone openings, when Meet exposes them</li>
+        </ul>
+      </div>
+      <div>
+        <h3>What it never records</h3>
+        <ul>
+          <li>Chat text, audio, video or screenshots</li>
+          <li>Anything you do on other websites</li>
+          <li>Any class you are not rostered in</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Who can see it</h3>
+        <ul>
+          <li>Your teacher sees your name and session activity, and can send it in a report to their own Gmail</li>
+          <li>Sign-in sends your account email to Firebase Authentication</li>
+          <li>Tracking starts only after you consent, and only for an active class you are rostered in</li>
+        </ul>
+      </div>
+      <div>
+        <h3>How long it is kept</h3>
+        <ul>
+          <li>Session data is scheduled for deletion after 90 days. It can be delayed if your teacher's extension is not running</li>
+          <li>Request deletion from this popup, or contact the maintainer through the SEEge GitHub repository</li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
   <footer class="foot">
     <a href="https://github.com/techItAlex/SEEge" target="_blank" rel="noopener">SEEge on GitHub</a>
+    <span>Focus is an indicator, not proof of attention.</span>
     <a class="only-popup" href="popup.html" target="_blank" rel="noopener">Open full page</a>
   </footer>
 </div>

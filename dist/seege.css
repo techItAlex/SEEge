@@ -21,6 +21,9 @@
   --amber: #d98512;
   --red: #d8402b;
   --mark: #ffe15c;
+  --ring: color-mix(in srgb, var(--blue) 16%, transparent);
+  --grid: color-mix(in srgb, var(--ink) 5%, transparent);
+  --glow: color-mix(in srgb, var(--blue) 15%, transparent);
   --r-lg: 18px;
   --r-md: 12px;
   --r-sm: 9px;
@@ -41,12 +44,34 @@
     --amber: #ffb84d;
     --red: #ff7d68;
     --mark: #ffe15c;
+    --ring: color-mix(in srgb, var(--blue) 26%, transparent);
+    --grid: color-mix(in srgb, #fff 5%, transparent);
+    --glow: color-mix(in srgb, var(--blue) 24%, transparent);
   }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+/* Background art: ripples from two corners, a faint grid, and a soft glow. Sits behind everything and never takes clicks. */
+body { position: relative; isolation: isolate; min-height: 100vh; }
+body::before, body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+body::before {
+  background:
+    repeating-radial-gradient(circle at 84% 14%, transparent 0 52px, var(--ring) 52px 53.5px),
+    repeating-radial-gradient(circle at 6% 96%, transparent 0 52px, var(--ring) 52px 53.5px);
+  -webkit-mask-image: radial-gradient(circle at 84% 14%, #000 0, transparent 48%), radial-gradient(circle at 6% 96%, #000 0, transparent 42%);
+  mask-image: radial-gradient(circle at 84% 14%, #000 0, transparent 48%), radial-gradient(circle at 6% 96%, #000 0, transparent 42%);
+}
+body::after {
+  background:
+    radial-gradient(48% 42% at 84% 8%, var(--glow), transparent 72%),
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 56px 56px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 0, #000 0, transparent 78%);
+  mask-image: radial-gradient(ellipse at 50% 0, #000 0, transparent 78%);
+}
+
 h1, h2, h3, p { margin: 0; }
 h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; line-height: 1.12; }
 button, input, textarea, select { font: inherit; color: inherit; }
