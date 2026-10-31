@@ -3,34 +3,214 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SEEge</title>
+  <meta name="color-scheme" content="light dark">
+  <title>SEEge | Sign in</title>
+  <link rel="stylesheet" href="seege.css">
   <style>
-    body { width: 310px; margin: 0; padding: 16px; color: #202124; font: 14px/1.5 system-ui, sans-serif; }
-    h1 { margin: 0 0 8px; font-size: 20px; } p { margin: 8px 0 12px; }
-    label { display: block; margin: 12px 0 6px; font-weight: 650; }
-    input[type=text] { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #9aa0a6; border-radius: 6px; }
-    button { width: 100%; margin-top: 10px; padding: 9px; border: 0; border-radius: 6px; background: #1a73e8; color: white; cursor: pointer; font-weight: 650; }
-    button.secondary { color: #174ea6; background: #e8f0fe; }
-    .notice { padding: 10px; border-radius: 8px; background: #f1f3f4; font-size: 12px; }
-    .check { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; font-weight: 400; }
-    .check input { margin-top: 4px; }
-    #status { min-height: 20px; color: #5f6368; overflow-wrap: anywhere; }
-    a { color: #174ea6; }
+    /* Compact popup first; the wide layout below only applies when opened as a full tab. */
+    body { width: 392px; padding: 18px; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .top a.dash { font-weight: 650; font-size: 13px; }
+    .intro, .roll { display: none; }
+    .shell { margin-top: 16px; display: grid; gap: 14px; }
+
+    .flow { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 6px 18px; }
+    .steps { list-style: none; margin: 0; padding: 0; }
+    .step { display: grid; grid-template-columns: 30px 1fr; gap: 0 12px; padding: 14px 0; position: relative; }
+    .step + .step { border-top: 1px solid var(--line); }
+    .marker { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; background: var(--soft); color: var(--muted); }
+    .step[data-state="current"] .marker { background: var(--blue); color: var(--blue-ink); }
+    .step[data-state="done"] .marker { background: color-mix(in srgb, var(--green) 18%, var(--card)); color: var(--green); }
+    .step[data-state="done"] .marker span { display: none; }
+    .step[data-state="done"] .marker::after { content: ""; width: 9px; height: 5px; border-left: 2.5px solid currentColor; border-bottom: 2.5px solid currentColor; transform: rotate(-45deg) translate(1px, -1px); }
+    .step-title { font-size: 16px; font-weight: 700; letter-spacing: -0.015em; line-height: 30px; }
+    .step[data-state="todo"] .step-title { color: var(--muted); }
+    .step-body { grid-column: 2; margin-top: 4px; }
+    .step[data-state="todo"] .step-body { display: none; }
+    .step-body p { color: var(--muted); }
+    .step-body p + p, .step-body p + button, .step-body p + form { margin-top: 10px; }
+
+    #authButton { width: 100%; margin-top: 12px; }
+    #authButton.signed-in { width: auto; padding: 6px 12px; margin-top: 8px; font-size: 13px; background: transparent; color: var(--ink); border-color: var(--line); }
+    #authButton.signed-in:hover { background: var(--soft); filter: none; }
+    #authButton .gicon { width: 18px; height: 18px; flex: none; background: #fff; border-radius: 50%; padding: 2px; }
+    #authButton.signed-in .gicon { display: none; }
+    #authButton:not(.signed-in) { background: var(--card); color: var(--ink); border-color: var(--line); padding: 11px 15px; }
+    #authButton:not(.signed-in):hover { background: var(--soft); filter: none; }
+
+    .email { font-weight: 650; color: var(--ink); overflow-wrap: anywhere; }
+    .field-hint { font-size: 12.5px; color: var(--muted); margin-top: 4px; font-weight: 400; }
+    .check { display: flex; align-items: flex-start; gap: 10px; font-weight: 400; margin-top: 14px; }
+    .check input { width: 18px; height: 18px; margin-top: 2px; flex: none; accent-color: var(--blue); }
+    #setup button[type=submit] { width: 100%; margin-top: 14px; padding: 11px 15px; }
+    #deleteRequest { margin-top: 12px; font-size: 13px; }
+
+    #status { min-height: 20px; padding: 0 4px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+    #status.error { color: var(--red); }
+
+    .privacy { background: transparent; border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; }
+    .privacy summary { cursor: pointer; font-weight: 650; }
+    .privacy-grid { display: grid; gap: 14px; margin-top: 12px; }
+    .privacy h3 { font-size: 15px; margin-bottom: 6px; }
+    .privacy ul { margin: 0; padding-left: 18px; color: var(--muted); }
+    .privacy li + li { margin-top: 3px; }
+    .privacy .fine { color: var(--muted); font-size: 12.5px; margin-top: 12px; }
+
+    .foot { margin-top: 14px; display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; }
+    .foot a { color: var(--muted); }
+
+    /* Roll-call preview: sample data drawn the way the dashboard draws real attendance. */
+    .roll { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 22px 24px 18px; }
+    .roll-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .roll-head h2 { font-size: 20px; }
+    .roll-sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .roll-rows { margin-top: 20px; display: grid; gap: 14px; }
+    .roll-row { display: grid; grid-template-columns: 82px 1fr 92px; align-items: center; gap: 14px; }
+    .who { font-weight: 650; }
+    .track { position: relative; height: 22px; border-radius: 7px; background: var(--soft); overflow: hidden; }
+    .track i { position: absolute; top: 0; bottom: 0; left: var(--l); width: var(--w); background: var(--green); border-radius: 5px; transform-origin: left center; animation: grow .9s cubic-bezier(.2,.7,.2,1) both; animation-delay: var(--d, 0s); }
+    .track i.away { background: var(--amber); border-radius: 3px; animation-name: fade; animation-delay: calc(var(--d, 0s) + .7s); }
+    .track.none { background: transparent; border: 1.5px dashed var(--line); display: flex; align-items: center; padding-left: 10px; font-size: 12px; color: var(--muted); }
+    .tag { font-size: 12.5px; font-weight: 650; text-align: right; }
+    .axis { position: relative; height: 18px; margin: 12px 92px 0 96px; font-size: 11.5px; color: var(--muted); }
+    .axis span { position: absolute; transform: translateX(-50%); }
+    .axis span:first-child { transform: none; } .axis span:last-child { transform: translateX(-100%); }
+    .key { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+    .key b { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 7px; vertical-align: -1px; }
+    @keyframes grow { from { transform: scaleX(0); } }
+    @keyframes fade { from { opacity: 0; } }
+
+    /* Full-page layout */
+    @media (min-width: 760px) {
+      body { width: auto; padding: 0; }
+      .page { max-width: 1200px; margin: 0 auto; padding: 28px clamp(24px, 5vw, 56px) 40px; }
+      .top .brand { font-size: 24px; } .top .brand svg { width: 40px; height: 40px; }
+      .top a.dash { padding: 8px 14px; border: 1px solid var(--line); border-radius: var(--r-sm); text-decoration: none; color: var(--ink); }
+      .top a.dash:hover { background: var(--soft); }
+      .shell { margin-top: clamp(28px, 6vh, 64px); grid-template-columns: minmax(0, 500px) minmax(0, 1fr); gap: 56px; align-items: start; }
+      .left { display: grid; gap: 28px; }
+      .intro { display: block; }
+      .intro h1 { font-size: clamp(36px, 4.6vw, 58px); letter-spacing: -0.035em; line-height: 1.02; font-weight: 750; text-wrap: balance; }
+      .lede { margin-top: 18px; font-size: 18px; line-height: 1.5; color: var(--muted); max-width: 46ch; }
+      .roll { display: block; }
+      .right { display: grid; gap: 22px; }
+      .privacy { background: var(--card); padding: 22px 24px; border-radius: var(--r-lg); }
+      .privacy summary { display: none; }
+      .privacy-grid { grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 0; }
+      .privacy h3 { font-size: 17px; margin-bottom: 8px; }
+      .only-popup { display: none; }
+      .foot { margin-top: 36px; }
+    }
+    @media (min-width: 760px) and (max-width: 1040px) {
+      .shell { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+    }
   </style>
 </head>
 <body>
-  <h1>SEEge</h1>
-  <div id="status" role="status">Checking sign-in status…</div>
-  <button id="authButton" hidden></button>
-  <form id="setup" hidden>
-    <p class="notice">Google sign-in sends your account email to Firebase Authentication. Activity tracking starts only after you save this consent and real name, and only for a rostered active class. SEEge uses this data to report class attendance and activity: your real name, consent time/version, meeting join/leave times, time away from the Meet tab, counts of chat sends, reactions, microphone openings, microphone-unmuted time when those Meet signals are available, and the extension version. It never stores chat text, audio, video, screenshots, or activity on other websites. Your class teacher can see your session activity and include it in a report sent to their own Gmail. Session data is scheduled for deletion after 90 days, though deletion may be delayed if the teacher's extension is not running. You may request deletion from the popup or contact the project maintainer through the SEEge GitHub repository. Focus is an indicator, not proof of attention.</p>
-    <label for="realName">Your real name</label>
-    <input id="realName" type="text" maxlength="100" autocomplete="name" required>
-    <label class="check"><input id="consent" type="checkbox" required><span>I understand what SEEge collects and consent to this monitoring when I join a monitored class.</span></label>
-    <button type="submit">Save consent and name</button>
-  </form>
-  <button id="deleteRequest" class="secondary" hidden>Request deletion of my latest session data</button>
-  <p><a href="dashboard.html" target="_blank">Open teacher dashboard</a></p>
-  <script src="popup.js"></script>
+<div class="page">
+  <header class="top">
+    <a class="brand" href="#" aria-label="SEEge">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><rect class="brand-tile" width="40" height="40" rx="11"/><path class="brand-eye" d="M5.5 20C9 13.6 14 10.5 20 10.5S31 13.6 34.5 20C31 26.4 26 29.5 20 29.5S9 26.4 5.5 20Z"/><circle class="brand-pupil" cx="20" cy="20" r="5.6"/></svg>
+      SEEge
+    </a>
+    <a class="dash" href="dashboard.html" target="_blank" rel="noopener">Teacher dashboard</a>
+  </header>
+
+  <div class="shell">
+    <div class="left">
+      <section class="intro">
+        <h1>Attendance for Google Meet that students opt in to.</h1>
+        <p class="lede">SEEge logs when students join, leave and switch tabs. It never reads chat, audio or video.</p>
+      </section>
+
+      <section class="flow" aria-label="Set up SEEge">
+        <ol class="steps">
+          <li id="step1" class="step" data-state="current">
+            <div class="marker"><span>1</span></div>
+            <h2 class="step-title">Sign in with Google</h2>
+            <div class="step-body">
+              <p id="stepEmail">SEEge uses your Google email to match you to a class roster.</p>
+              <button id="authButton" type="button" hidden>
+                <svg class="gicon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.6z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+                <span id="authLabel">Continue with Google</span>
+              </button>
+            </div>
+          </li>
+          <li id="step2" class="step" data-state="todo">
+            <div class="marker"><span>2</span></div>
+            <h2 class="step-title">Add your name and consent</h2>
+            <div class="step-body">
+              <p id="stepName" hidden></p>
+              <form id="setup" hidden>
+                <label for="realName">Your real name</label>
+                <input id="realName" type="text" maxlength="100" autocomplete="name" placeholder="As it appears on your class roster" required>
+                <p class="field-hint">Your teacher sees this name in attendance reports.</p>
+                <label class="check"><input id="consent" type="checkbox" required><span>I understand what SEEge records and consent to it when I join a monitored class.</span></label>
+                <button type="submit">Save and continue</button>
+              </form>
+            </div>
+          </li>
+          <li id="step3" class="step" data-state="todo">
+            <div class="marker"><span>3</span></div>
+            <h2 class="step-title">Join your class</h2>
+            <div class="step-body">
+              <p>Open the Meet link your teacher shared. While SEEge is counting you in, a banner shows at the top of the Meet page.</p>
+              <button id="deleteRequest" class="secondary" type="button" hidden>Request deletion of my latest session data</button>
+            </div>
+          </li>
+        </ol>
+      </section>
+      <div id="status" role="status">Checking sign-in status…</div>
+    </div>
+
+    <div class="right">
+      <section class="roll" role="img" aria-label="Sample attendance timeline for a class of five students: three present, one left early, one with no activity.">
+        <div class="roll-head">
+          <div><h2>Physics 101</h2><p class="roll-sub">Sample class, 3:00 to 3:30 PM</p></div>
+          <span class="pill live">live</span>
+        </div>
+        <div class="roll-rows">
+          <div class="roll-row"><span class="who">Maya R.</span><div class="track"><i style="--l:0%;--w:100%;--d:.1s"></i><i class="away" style="--l:40%;--w:8%;--d:.1s"></i></div><span class="tag good">Present</span></div>
+          <div class="roll-row"><span class="who">Jon P.</span><div class="track"><i style="--l:30%;--w:70%;--d:.25s"></i><i class="away" style="--l:58%;--w:6%;--d:.25s"></i></div><span class="tag late">Late</span></div>
+          <div class="roll-row"><span class="who">Priya S.</span><div class="track"><i style="--l:0%;--w:100%;--d:.4s"></i><i class="away" style="--l:20%;--w:3%;--d:.4s"></i><i class="away" style="--l:66%;--w:4%;--d:.4s"></i></div><span class="tag good">Present</span></div>
+          <div class="roll-row"><span class="who">Leo K.</span><div class="track"><i style="--l:0%;--w:62%;--d:.55s"></i></div><span class="tag late">Partial</span></div>
+          <div class="roll-row"><span class="who">Ana T.</span><div class="track none">No SEEge activity detected</div><span class="tag bad">Absent</span></div>
+        </div>
+        <div class="axis"><span style="left:0">3:00</span><span style="left:33.3%">3:10</span><span style="left:66.6%">3:20</span><span style="left:100%">3:30</span></div>
+        <div class="key"><span><b style="background:var(--green)"></b>In the call</span><span><b style="background:var(--amber)"></b>Away from the Meet tab</span></div>
+      </section>
+
+      <details class="privacy" id="privacy">
+        <summary>What SEEge records and why</summary>
+        <div class="privacy-grid">
+          <div>
+            <h3>What it records</h3>
+            <ul>
+              <li>Your real name and when you consented</li>
+              <li>When you join and leave a monitored Meet</li>
+              <li>How long you are away from the Meet tab</li>
+              <li>Counts of chat sends, reactions and microphone openings, when Meet exposes them</li>
+            </ul>
+          </div>
+          <div>
+            <h3>What it never records</h3>
+            <ul>
+              <li>Chat text, audio, video or screenshots</li>
+              <li>Anything you do on other websites</li>
+              <li>Any class you are not rostered in</li>
+            </ul>
+          </div>
+        </div>
+        <p class="fine">Sign-in sends your account email to Firebase Authentication. Tracking starts only after you save consent and your name, and only for an active class you are rostered in. Your teacher can see your session activity and send it in a report to their own Gmail. Session data is scheduled for deletion after 90 days, though deletion can be delayed if the teacher's extension is not running. You can request deletion from this popup, or contact the maintainer through the SEEge GitHub repository. Focus is an indicator, not proof of attention.</p>
+      </details>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <a href="https://github.com/techItAlex/SEEge" target="_blank" rel="noopener">SEEge on GitHub</a>
+    <a class="only-popup" href="popup.html" target="_blank" rel="noopener">Open full page</a>
+  </footer>
+</div>
+<script src="popup.js"></script>
 </body>
 </html>

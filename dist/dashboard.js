@@ -31655,7 +31655,8 @@ This typically indicates that your device does not have a healthy Internet conne
       function renderSession(session) {
         state.currentSession = session;
         $("session-title").textContent = session.className;
-        $("session-meta").textContent = `Meet: ${(session.meetCodes ?? []).join(", ")} \xB7 ${session.scheduledStart.toDate().toLocaleString()} \u2013 ${session.scheduledEnd.toDate().toLocaleString()}`;
+        const when = { dateStyle: "medium", timeStyle: "short" };
+        $("session-meta").innerHTML = `<span>Meet code <b>${safeText((session.meetCodes ?? []).join(", "))}</b></span><span>${safeText(session.scheduledStart.toDate().toLocaleString([], when))} to ${safeText(session.scheduledEnd.toDate().toLocaleString([], when))}</span>`;
         $("session-status").textContent = session.status;
         $("session-status").className = `pill ${session.status}`;
         $("actual-end").value = toInputTime(session.actualEnd);
@@ -31755,10 +31756,10 @@ This typically indicates that your device does not have a healthy Internet conne
       }
       function renderSummary() {
         const data = state.metrics;
-        const values = [["Present", data.present], ["Late", data.late], ["Partial", data.partial], ["Absent / no SEEge activity", data.absent], ["Average focus", data.averageFocus == null ? "\u2014" : `${data.averageFocus}%`], ["Currently in Meet", data.currentlyInMeet]];
-        $("summary").replaceChildren(...values.map(([label, value]) => {
+        const values = [["Present", data.present, "present"], ["Late", data.late, "late"], ["Partial", data.partial, "partial"], ["Absent", data.absent, "absent"], ["Average focus", data.averageFocus == null ? "\u2014" : `${data.averageFocus}%`, "focus"], ["In Meet now", data.currentlyInMeet, "live"]];
+        $("summary").replaceChildren(...values.map(([label, value, kind]) => {
           const box = document.createElement("div");
-          box.className = "stat card";
+          box.className = `stat s-${kind}`;
           box.innerHTML = `<span class="muted">${label}</span><b>${value}</b>`;
           return box;
         }));
@@ -31815,7 +31816,9 @@ This typically indicates that your device does not have a healthy Internet conne
         const c = b2 + otherPartial / n * 360;
         $("donut").style.background = `conic-gradient(var(--green) 0deg ${a}deg,var(--amber) ${a}deg ${b2}deg,var(--blue) ${b2}deg ${c}deg,var(--line) ${c}deg 360deg)`;
         $("donut-label").textContent = `${rows.length} rostered`;
-        $("legend").textContent = `Present ${presentOnly} \xB7 Late ${lateOnly} \xB7 Partial ${otherPartial} \xB7 Absent ${absent}${lateCount !== lateOnly ? ` \xB7 Late and partial ${lateCount - lateOnly}` : ""}`;
+        const legend = [["var(--green)", "Present", presentOnly], ["var(--amber)", "Late", lateOnly], ["var(--blue)", "Partial", otherPartial], ["var(--red)", "Absent", absent]];
+        if (lateCount !== lateOnly) legend.push(["var(--amber)", "Late and partial", lateCount - lateOnly]);
+        $("legend").innerHTML = legend.map(([color, label, count]) => `<span><i style="background:${color}"></i>${label} ${count}</span>`).join("");
         const bins = [0, 0, 0, 0, 0];
         for (const row of rows) if (row.focus != null) bins[Math.min(4, Math.floor(row.focus / 20))]++;
         const max = Math.max(1, ...bins);
@@ -31825,9 +31828,11 @@ This typically indicates that your device does not have a healthy Internet conne
           const div = document.createElement("div");
           div.style.height = `${Math.max(4, count / max * 130)}px`;
           div.title = `${count} student(s)`;
+          const total = document.createElement("b");
+          total.textContent = count;
           const small = document.createElement("small");
           small.textContent = ["0\u201319", "20\u201339", "40\u201359", "60\u201379", "80\u2013100"][i2];
-          div.append(small);
+          div.append(total, small);
           bars.append(div);
         });
       }

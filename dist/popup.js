@@ -14,6 +14,16 @@
       var $ = (id) => document.getElementById(id);
       var send = (type) => chrome.runtime.sendMessage({ type });
       var CONSENT_VERSION = "2026-10-23-v1";
+      function setStatus(message, isError = false) {
+        $("status").textContent = message;
+        $("status").classList.toggle("error", isError);
+      }
+      function setSteps(states) {
+        states.forEach((state, index) => {
+          $(`step${index + 1}`).dataset.state = state;
+        });
+      }
+      $("privacy").open = window.matchMedia("(min-width: 760px)").matches;
       async function render() {
         const result = await send("whoami");
         if (result?.error) throw new Error(result.error);
@@ -21,57 +31,71 @@
         const button = $("authButton");
         const setup = $("setup");
         const deletion = $("deleteRequest");
+        button.hidden = false;
+        button.disabled = false;
         if (!user) {
-          $("status").textContent = "Sign in once with Google to set up SEEge.";
-          button.hidden = false;
-          button.textContent = "Sign in with Google";
+          setSteps(["current", "todo", "todo"]);
+          $("stepEmail").textContent = "SEEge uses your Google email to match you to a class roster.";
+          $("stepName").hidden = true;
+          button.classList.remove("signed-in");
+          $("authLabel").textContent = "Continue with Google";
           button.onclick = async () => {
             button.disabled = true;
+            setStatus("Opening Google sign-in\u2026");
             try {
               const response = await send("signin");
               if (response?.error) throw new Error(response.error);
+              setStatus("");
               await render();
             } catch (error) {
-              $("status").textContent = error.message;
+              setStatus(error.message, true);
               button.disabled = false;
             }
           };
           setup.hidden = true;
           deletion.hidden = true;
+          setStatus("");
           return;
         }
-        const key = `profile:${user.email.toLowerCase()}`;
-        const values = await chrome.storage.local.get([key, `lastSession:${user.email.toLowerCase()}`]);
+        const email = user.email.toLowerCase();
+        const key = `profile:${email}`;
+        const values = await chrome.storage.local.get([key, `lastSession:${email}`]);
         const profile = values[key];
-        $("status").textContent = `Signed in as ${user.email}`;
-        button.hidden = false;
-        button.className = "secondary";
-        button.textContent = "Sign out";
+        const consented = !!(profile?.consentAt && profile?.name);
+        const emailLine = $("stepEmail");
+        emailLine.replaceChildren("Signed in as ", Object.assign(document.createElement("span"), { className: "email", textContent: user.email }));
+        button.classList.add("signed-in");
+        $("authLabel").textContent = "Sign out";
         button.onclick = async () => {
           button.disabled = true;
           try {
             const response = await send("signout");
             if (response?.error) throw new Error(response.error);
+            setStatus("");
             await render();
           } catch (error) {
-            $("status").textContent = error.message;
+            setStatus(error.message, true);
             button.disabled = false;
           }
         };
-        setup.hidden = !!(profile?.consentAt && profile?.name);
+        setSteps(consented ? ["done", "done", "current"] : ["done", "current", "todo"]);
+        setup.hidden = consented;
+        $("stepName").hidden = !consented;
+        if (consented) $("stepName").textContent = `Saved as ${profile.name}. You can sign out and back in to change it.`;
         if (profile?.name) $("realName").value = profile.name;
-        deletion.hidden = !values[`lastSession:${user.email.toLowerCase()}`];
+        deletion.hidden = !values[`lastSession:${email}`];
         deletion.onclick = async () => {
           deletion.disabled = true;
           try {
-            const response = await chrome.runtime.sendMessage({ type: "requestDeletion", sessionId: values[`lastSession:${user.email.toLowerCase()}`] });
+            const response = await chrome.runtime.sendMessage({ type: "requestDeletion", sessionId: values[`lastSession:${email}`] });
             if (response?.error) throw new Error(response.error);
             deletion.textContent = "Request sent. Local session data cleared; monitoring stopped for this class.";
           } catch (error) {
-            $("status").textContent = error.message;
+            setStatus(error.message, true);
             deletion.disabled = false;
           }
         };
+        setStatus(consented ? "You are set. SEEge tracks only when you join an active class you are rostered in." : "");
       }
       $("setup").addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -84,12 +108,9 @@
           consentAt: Date.now(),
           consentVersion: CONSENT_VERSION
         } });
-        $("status").textContent = "Consent and name saved. SEEge will track only when you join an active monitored class.";
         await render();
       });
-      render().catch((error) => {
-        $("status").textContent = `SEEge could not load: ${error.message}`;
-      });
+      render().catch((error) => setStatus(`SEEge could not load: ${error.message}`, true));
     }
   });
   require_popup();

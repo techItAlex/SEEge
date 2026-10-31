@@ -1,0 +1,107 @@
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("fonts/bricolage-grotesque.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+/* Design tokens. The names --blue/--green/--amber/--red are kept because dashboard.js draws charts with them. */
+:root {
+  color-scheme: light dark;
+  --bg: #f4f5fa;
+  --card: #ffffff;
+  --soft: #eceef9;
+  --ink: #171b3d;
+  --muted: #596083;
+  --line: #dcdff0;
+  --blue: #3347e8;
+  --blue-ink: #ffffff;
+  --blue-tint: #e6e9fd;
+  --green: #11966a;
+  --amber: #d98512;
+  --red: #d8402b;
+  --mark: #ffe15c;
+  --r-lg: 18px;
+  --r-md: 12px;
+  --r-sm: 9px;
+  --font: "Bricolage Grotesque", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1230;
+    --card: #181c45;
+    --soft: #20255a;
+    --ink: #eceeff;
+    --muted: #a5abd6;
+    --line: #2b3070;
+    --blue: #8493ff;
+    --blue-ink: #0f1230;
+    --blue-tint: #262c78;
+    --green: #3ed3a0;
+    --amber: #ffb84d;
+    --red: #ff7d68;
+    --mark: #ffe15c;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; line-height: 1.12; }
+button, input, textarea, select { font: inherit; color: inherit; }
+a { color: var(--blue); text-underline-offset: 3px; }
+.hidden { display: none !important; }
+.muted, small { color: var(--muted); }
+.good { color: var(--green); } .late { color: var(--amber); } .bad { color: var(--red); }
+
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 6px; }
+
+/* Buttons */
+.btn, button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid transparent; border-radius: var(--r-sm); padding: 9px 15px;
+  background: var(--blue); color: var(--blue-ink); font-weight: 650; cursor: pointer;
+  transition: transform .12s ease, filter .12s ease, background-color .12s ease;
+}
+button:hover:not(:disabled) { filter: brightness(1.08); }
+button:active:not(:disabled) { transform: translateY(1px); }
+button.secondary { background: transparent; color: var(--ink); border-color: var(--line); }
+button.secondary:hover:not(:disabled) { background: var(--soft); filter: none; }
+button.danger { background: transparent; color: var(--red); border-color: color-mix(in srgb, var(--red) 45%, var(--line)); }
+button.danger:hover:not(:disabled) { background: color-mix(in srgb, var(--red) 12%, transparent); filter: none; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Fields */
+input, textarea, select {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: var(--card); transition: border-color .12s ease, box-shadow .12s ease;
+}
+input:hover, textarea:hover, select:hover { border-color: color-mix(in srgb, var(--blue) 40%, var(--line)); }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 25%, transparent); }
+input::placeholder, textarea::placeholder { color: color-mix(in srgb, var(--muted) 70%, transparent); }
+label { display: block; font-weight: 650; margin: 14px 0 5px; }
+
+/* Brand mark: an eye whose pupil is the highlighter dot */
+.brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: -0.03em; color: var(--ink); text-decoration: none; }
+.brand svg { width: 34px; height: 34px; flex: none; }
+.brand-tile { fill: var(--blue); }
+.brand-eye { fill: #fff; }
+.brand-pupil { fill: var(--mark); }
+
+/* Pills and dots */
+.pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 99px; padding: 2px 10px; font-size: 12.5px; font-weight: 650; background: var(--soft); color: var(--muted); }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.live { background: color-mix(in srgb, var(--green) 16%, var(--card)); color: var(--green); }
+.pill.scheduled { background: color-mix(in srgb, var(--amber) 18%, var(--card)); color: var(--amber); }
+.pill.ended { background: var(--soft); color: var(--muted); }
+.pill:empty { display: none; }
+
+/* Presence timeline (sign-in hero and student detail share this look) */
+.timeline { height: 30px; position: relative; background: var(--soft); border-radius: 8px; margin: 14px 0; overflow: hidden; }
+.segment { position: absolute; top: 0; height: 100%; background: var(--green); border-radius: 6px; }
+.awaysegment { position: absolute; top: 0; height: 100%; background: var(--amber); opacity: .9; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

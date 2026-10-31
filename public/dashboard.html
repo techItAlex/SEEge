@@ -5,103 +5,116 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>SEEge | Teacher dashboard</title>
+  <link rel="stylesheet" href="seege.css">
   <style>
-    :root { color-scheme: light dark; --bg:#f4f6f8; --card:#fff; --ink:#17212b; --muted:#5e6a75; --line:#dce2e7; --soft:#eef2f5; --blue:#1769aa; --green:#27864b; --amber:#a26300; --red:#ae3035; }
-    @media(prefers-color-scheme:dark){:root{--bg:#111820;--card:#1c2732;--ink:#e8edf2;--muted:#aab5bf;--line:#33414e;--soft:#243240;--blue:#79b9f2;--green:#6bd18c;--amber:#f4be60;--red:#ff8585}}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,sans-serif}
-    h1,h2,h3{line-height:1.2;margin:0} h1{font-size:20px} h2{font-size:17px} h3{font-size:15px}
-    button,input,textarea,select{font:inherit}
-    button{border:0;border-radius:7px;padding:8px 13px;background:var(--blue);color:#fff;font-weight:650;cursor:pointer}
-    button.secondary{background:transparent;color:var(--blue);border:1px solid var(--line)}
-    button.danger{background:var(--red)}
-    button:disabled{opacity:.55;cursor:not-allowed}
-    input,textarea,select{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
-    label{display:block;font-weight:650;margin:10px 0 4px}
-    .muted,small{color:var(--muted)}
-    .hidden{display:none!important}
-    .bad{color:var(--red)} .good{color:var(--green)} .late{color:var(--amber)}
+    .topbar { position: sticky; top: 0; z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px clamp(16px, 3vw, 32px); background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .who { font-size: 13px; color: var(--muted); }
+    #message { margin: 16px clamp(16px, 3vw, 32px) 0; padding: 11px 14px; border-radius: var(--r-md); background: var(--soft); }
+    #message.bad { background: color-mix(in srgb, var(--red) 12%, var(--card)); color: var(--red); }
 
-    .topbar{position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 24px;background:var(--card);border-bottom:1px solid var(--line)}
-    .topbar .who{font-size:13px}
-    #message{margin:16px 24px 0;padding:10px 12px;border-radius:7px;background:var(--soft)}
-    #message.bad{border-left:3px solid var(--red)}
+    .layout { display: grid; grid-template-columns: 296px minmax(0, 1fr); gap: 28px; max-width: 1560px; margin: 0 auto; padding: 24px clamp(16px, 3vw, 32px) 48px; }
+    .sidebar { display: flex; flex-direction: column; gap: 14px; align-self: start; position: sticky; top: 76px; max-height: calc(100vh - 96px); overflow: auto; }
+    .side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .side-head h2 { font-size: 18px; }
+    .content { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 
-    .layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:20px;max-width:1500px;margin:0 auto;padding:20px 24px}
-    .sidebar{display:flex;flex-direction:column;gap:14px;align-self:start;position:sticky;top:72px;max-height:calc(100vh - 92px);overflow:auto}
-    .sidebar .side-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
-    .content{display:flex;flex-direction:column;gap:16px;min-width:0}
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px; }
+    .card h2 { font-size: 20px; }
+    .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
+    .card-head p { margin-top: 4px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .notice { padding: 11px 14px; border-radius: var(--r-md); background: color-mix(in srgb, var(--mark) 24%, var(--card)); border: 1px solid color-mix(in srgb, var(--mark) 60%, var(--line)); }
 
-    .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
-    .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
-    .card-head p{margin:2px 0 0}
-    .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .notice{padding:10px 12px;border-left:3px solid var(--amber);background:color-mix(in srgb,var(--amber) 10%,var(--card));border-radius:5px}
+    /* Session list */
+    .sessions { display: flex; flex-direction: column; gap: 8px; }
+    .session-item { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; text-align: left; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-md); font-weight: 400; padding: 11px 13px; }
+    .session-item:hover:not(:disabled) { background: var(--card); border-color: color-mix(in srgb, var(--blue) 45%, var(--line)); filter: none; }
+    .session-item b { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+    .session-item small { grid-column: 1 / -1; text-align: left; }
+    .session-item.active { border-color: var(--blue); background: var(--blue-tint); }
 
-    .sessions{display:flex;flex-direction:column;gap:6px}
-    .session-item{display:grid;grid-template-columns:1fr auto;gap:2px 8px;text-align:left;background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:400;padding:9px 11px}
-    .session-item b{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .session-item small{grid-column:1/-1}
-    .session-item.active{border-color:var(--blue);box-shadow:inset 3px 0 0 var(--blue)}
-    .pill{display:inline-block;border-radius:99px;padding:1px 9px;font-size:12px;font-weight:650;background:var(--soft);color:var(--muted)}
-    .pill.live{background:color-mix(in srgb,var(--green) 18%,var(--card));color:var(--green)}
-    .pill.scheduled{background:color-mix(in srgb,var(--amber) 18%,var(--card));color:var(--amber)}
+    /* Forms */
+    .formgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+    .formgrid h3 { grid-column: 1 / -1; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 17px; }
+    .formgrid h3:first-child { margin-top: 0; padding-top: 0; border: 0; }
+    .span2 { grid-column: 1 / -1; }
+    .stack { display: grid; grid-template-columns: 1fr; }
+    .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
+    .check input { width: 18px; height: 18px; margin-top: 2px; flex: none; accent-color: var(--blue); }
+    .hint { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+    details > summary { cursor: pointer; font-weight: 650; }
+    details[open] > summary { margin-bottom: 10px; }
 
-    .formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
-    .formgrid h3{margin:16px 0 0;grid-column:1/-1;padding-top:12px;border-top:1px solid var(--line)}
-    .formgrid h3:first-child{margin-top:0;padding-top:0;border:0}
-    .span2{grid-column:1/-1}
-    .stack{display:grid;grid-template-columns:1fr}
-    .check{display:flex;gap:8px;align-items:flex-start;font-weight:400}
-    .check input{width:auto;margin-top:4px}
-    .hint{font-size:12px;color:var(--muted);margin:3px 0 0}
+    /* Selected session header */
+    .session-head h2 { font-size: clamp(24px, 3vw, 34px); letter-spacing: -0.03em; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    #session-meta { display: flex; gap: 6px 22px; flex-wrap: wrap; margin-top: 8px; font-size: 13.5px; }
+    #session-meta span { display: inline-flex; align-items: center; gap: 7px; }
+    #session-meta b { color: var(--ink); font-weight: 650; }
 
-    .grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
-    .stat{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
-    .stat span{font-size:12px}
-    .stat b{display:block;font-size:26px;margin-top:2px}
+    /* Summary tiles */
+    .grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+    .stat { padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--card); }
+    .stat span { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+    .stat span::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--line); flex: none; }
+    .stat.s-present span::before { background: var(--green); } .stat.s-late span::before, .stat.s-partial span::before { background: var(--amber); }
+    .stat.s-absent span::before { background: var(--red); } .stat.s-focus span::before, .stat.s-live span::before { background: var(--blue); }
+    .stat b { display: block; font-size: 36px; line-height: 1.1; letter-spacing: -0.035em; font-weight: 750; margin-top: 8px; }
 
-    .charts{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center}
-    .donut{width:148px;height:148px;border-radius:50%;display:grid;place-items:center;margin:12px auto;background:conic-gradient(var(--line) 0deg 360deg)}
-    .donut span{display:grid;place-items:center;width:92px;height:92px;background:var(--card);border-radius:50%;font-weight:700;text-align:center}
-    .bars{height:150px;display:flex;align-items:end;gap:8px;border-bottom:1px solid var(--line);margin:12px 0 22px}
-    .bars div{flex:1;background:var(--blue);min-width:12px;border-radius:4px 4px 0 0;position:relative}
-    .bars small{position:absolute;top:100%;font-size:10px;white-space:nowrap}
+    /* Charts */
+    .charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 32px; align-items: start; }
+    .charts h3 { font-size: 17px; }
+    .donut { width: 168px; height: 168px; border-radius: 50%; display: grid; place-items: center; margin: 18px auto 14px; background: conic-gradient(var(--line) 0deg 360deg); }
+    .donut span { display: grid; place-items: center; width: 112px; height: 112px; background: var(--card); border-radius: 50%; font-weight: 700; text-align: center; line-height: 1.2; }
+    #legend { display: flex; gap: 6px 16px; flex-wrap: wrap; justify-content: center; font-size: 13px; }
+    #legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+    .bars { height: 168px; display: flex; align-items: end; gap: 12px; border-bottom: 1px solid var(--line); margin: 36px 0 28px; }
+    .bars div { flex: 1; min-width: 14px; border-radius: 7px 7px 0 0; position: relative; background: var(--blue); }
+    .bars div:nth-child(1) { background: var(--red); } .bars div:nth-child(2) { background: var(--amber); } .bars div:nth-child(3) { background: color-mix(in srgb, var(--amber) 50%, var(--green)); }
+    .bars div:nth-child(4), .bars div:nth-child(5) { background: var(--green); }
+    .bars b { position: absolute; bottom: 100%; left: 0; right: 0; text-align: center; font-size: 13px; padding-bottom: 4px; }
+    .bars small { position: absolute; top: 100%; left: 0; right: 0; text-align: center; padding-top: 6px; font-size: 11.5px; white-space: nowrap; }
 
-    .tablewrap{overflow:auto;margin-top:8px}
-    table{width:100%;border-collapse:collapse;min-width:980px}
-    th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
-    th{font-size:12px;color:var(--muted);position:sticky;top:0;background:var(--card)}
-    th button.sort{padding:2px 4px;border:0;font-size:12px;color:var(--muted);font-weight:650}
-    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
-    .toolbar input{width:230px}.toolbar select{width:auto}
-    .badge{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:2px 8px;margin-right:3px;font-size:12px}
-    .focusbar{display:inline-block;width:75px;height:8px;background:var(--line);border-radius:5px;overflow:hidden;vertical-align:middle}
-    .focusbar i{display:block;height:100%;background:var(--green)}
+    /* Students table */
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+    .toolbar input { width: 240px; } .toolbar select { width: auto; }
+    .tablewrap { overflow: auto; margin: 10px -20px -6px; padding: 0 20px 6px; }
+    table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+    tbody tr:hover { background: color-mix(in srgb, var(--blue) 6%, transparent); }
+    tbody td:first-child { font-weight: 650; }
+    th { font-size: 12.5px; color: var(--muted); position: sticky; top: 0; background: var(--card); }
+    th button.sort { padding: 2px 4px; border: 0; background: transparent; font-size: 12.5px; color: var(--muted); font-weight: 650; }
+    th button.sort:hover:not(:disabled) { background: var(--soft); }
+    .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 99px; padding: 2px 10px; margin-right: 4px; font-size: 12.5px; font-weight: 650; background: var(--soft); color: var(--muted); }
+    .badge.good { background: color-mix(in srgb, var(--green) 15%, var(--card)); } .badge.late { background: color-mix(in srgb, var(--amber) 18%, var(--card)); } .badge.bad { background: color-mix(in srgb, var(--red) 14%, var(--card)); }
+    .focusbar { display: inline-block; width: 70px; height: 8px; background: var(--soft); border-radius: 5px; overflow: hidden; vertical-align: middle; margin-left: 6px; }
+    .focusbar i { display: block; height: 100%; background: var(--green); border-radius: 5px; }
 
-    .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .rosterlist{margin:8px 0 0;padding:0;list-style:none;max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:8px}
-    .rosterlist li{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;border-bottom:1px solid var(--line)}
-    .rosterlist li:last-child{border:0}
-    details summary{cursor:pointer;font-weight:650}
-    details[open] summary{margin-bottom:8px}
-    .empty{text-align:center;padding:48px 16px}
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .rosterlist { margin: 12px 0 0; padding: 0; list-style: none; max-height: 190px; overflow: auto; border: 1px solid var(--line); border-radius: var(--r-md); }
+    .rosterlist li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; }
+    .rosterlist li + li { border-top: 1px solid var(--line); }
+    #roster-form { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .empty { text-align: center; padding: 64px 20px; }
+    .empty h2 { margin-bottom: 6px; }
 
-    .timeline{height:30px;position:relative;background:var(--line);border-radius:5px;margin:14px 0}
-    .segment{position:absolute;top:0;height:100%;background:var(--green);border-radius:5px}
-    .awaysegment{position:absolute;top:0;height:100%;background:var(--amber);opacity:.8}
-    #student-detail{position:fixed;right:20px;top:20px;bottom:20px;z-index:6;width:min(440px,calc(100vw - 40px));overflow:auto;box-shadow:0 8px 40px #0003}
-    #student-detail .card-head{margin-bottom:12px}
+    #student-detail { position: fixed; right: 20px; top: 20px; bottom: 20px; z-index: 6; width: min(460px, calc(100vw - 40px)); overflow: auto; box-shadow: 0 18px 60px rgb(10 12 40 / .35); }
+    #student-detail .card-head { margin-bottom: 14px; }
+    #student-detail p { margin-top: 8px; }
 
-    @media(max-width:1100px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media(max-width:900px){.layout{grid-template-columns:1fr;padding:14px}.sidebar{position:static;max-height:none}.two,.charts{grid-template-columns:1fr}.topbar{padding:10px 14px}#message{margin:12px 14px 0}}
-    @media(max-width:580px){.formgrid{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width: 1180px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .sidebar { position: static; max-height: none; } .two, .charts { grid-template-columns: 1fr; } }
+    @media (max-width: 580px) { .formgrid { grid-template-columns: 1fr; } .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .who { display: none; } }
   </style>
 </head>
 <body>
 <header class="topbar">
-  <div><h1>SEEge</h1><div id="who" class="muted who">Connecting…</div></div>
-  <button id="refresh" class="secondary">Refresh</button>
+  <a class="brand" href="popup.html" aria-label="SEEge">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><rect class="brand-tile" width="40" height="40" rx="11"/><path class="brand-eye" d="M5.5 20C9 13.6 14 10.5 20 10.5S31 13.6 34.5 20C31 26.4 26 29.5 20 29.5S9 26.4 5.5 20Z"/><circle class="brand-pupil" cx="20" cy="20" r="5.6"/></svg>
+    SEEge
+  </a>
+  <div class="topbar-right"><div id="who" class="who">Connecting…</div><button id="refresh" class="secondary">Refresh</button></div>
 </header>
 <p id="message" role="status">Loading your account…</p>
 
@@ -109,17 +122,17 @@
   <div class="layout">
 
     <aside class="sidebar">
-      <div class="side-head"><h2>Sessions</h2><button id="new-session">+ New session</button></div>
+      <div class="side-head"><h2>Sessions</h2><button id="new-session">New session</button></div>
       <div id="sessions" class="sessions"></div>
-      <small class="muted">Ended sessions remain available for 90 days.</small>
+      <small class="muted">Ended sessions stay available for 90 days.</small>
       <details class="card">
         <summary>Advanced: Meet selectors</summary>
-        <p class="muted">Meet can change its page structure. Configure selectors after checking the current Meet DOM. Empty or broken selectors are reported as unavailable; SEEge never stores message text.</p>
+        <p class="muted">Meet can change its page structure. Check the current Meet page, then set the selectors here. Empty or broken selectors are reported as unavailable. SEEge never stores message text.</p>
         <form id="selector-form" class="stack">
           <div><label for="chat-selector">Own message send button selector</label><input id="chat-selector" placeholder='button[aria-label="Send"]'></div>
           <div><label for="mic-selector">Microphone button selector</label><input id="mic-selector" placeholder='button[aria-label*="microphone" i]'></div>
           <div><label for="reaction-selectors">Reaction button selectors (one per line)</label><textarea id="reaction-selectors" rows="2" placeholder='button[aria-label*="reaction" i]'></textarea></div>
-          <div class="actions" style="margin-top:10px"><button type="submit" class="secondary">Save selectors</button><span id="selector-result" class="muted"></span></div>
+          <div class="actions" style="margin-top:12px"><button type="submit" class="secondary">Save selectors</button><span id="selector-result" class="muted"></span></div>
         </form>
       </details>
     </aside>
@@ -128,20 +141,20 @@
 
       <!-- Create session -->
       <section id="create-card" class="card hidden">
-        <div class="card-head"><div><h2>Create class session</h2><p class="muted">Fill in the class details, add your students, then create. Students are tracked only after they sign in and consent.</p></div><button id="cancel-create" class="secondary" type="button">Cancel</button></div>
-        <div class="notice">Before creating a session, confirm that the class has been informed about SEEge monitoring.</div>
+        <div class="card-head"><div><h2>Create a class session</h2><p class="muted">Add the class details and your students. Students are tracked only after they sign in and consent.</p></div><button id="cancel-create" class="secondary" type="button">Cancel</button></div>
+        <div class="notice">Before you create a session, make sure your class knows SEEge will monitor attendance.</div>
         <form id="session-form" class="formgrid">
-          <h3>1 · Class details</h3>
-          <div><label for="class-name">Class name</label><input id="class-name" required maxlength="120" placeholder="e.g. Physics 101"></div>
-          <div><label for="meet-codes">Meet code(s)</label><input id="meet-codes" placeholder="abc-defg-hij" required><p class="hint">Comma separated if the call uses more than one code.</p></div>
+          <h3>Class details</h3>
+          <div><label for="class-name">Class name</label><input id="class-name" required maxlength="120" placeholder="Physics 101"></div>
+          <div><label for="meet-codes">Meet code(s)</label><input id="meet-codes" placeholder="abc-defg-hij" required><p class="hint">Separate codes with commas if the call uses more than one.</p></div>
           <div><label for="scheduled-start">Scheduled start</label><input id="scheduled-start" type="datetime-local" required></div>
           <div><label for="scheduled-end">Scheduled end</label><input id="scheduled-end" type="datetime-local" required></div>
 
-          <h3>2 · Students</h3>
+          <h3>Students</h3>
           <div><label for="roster-file">Roster CSV file</label><input id="roster-file" type="file" accept=".csv,text/csv"><p class="hint">Columns: name,email</p></div>
-          <div><label for="roster-text">Or paste roster</label><textarea id="roster-text" rows="3" placeholder="name,email&#10;Alex Student,alex@example.com"></textarea></div>
+          <div><label for="roster-text">Or paste the roster</label><textarea id="roster-text" rows="3" placeholder="name,email&#10;Alex Student,alex@example.com"></textarea></div>
 
-          <h3>3 · Grading rules</h3>
+          <h3>Grading rules</h3>
           <div><label for="late-minutes">Late after (minutes)</label><input id="late-minutes" type="number" min="0" max="180" value="10"></div>
           <div><label for="present-percent">Present at (% of class)</label><input id="present-percent" type="number" min="1" max="100" value="75"></div>
           <div class="span2"><label for="participation-target">Participation target per hour</label><input id="participation-target" type="number" min="1" max="100" value="5"></div>
@@ -150,20 +163,20 @@
           <div><label for="focus-stability">Focus weight: stability (%)</label><input id="focus-stability" type="number" min="0" max="100" value="15"></div>
           <p class="hint span2">The three focus weights must add up to 100.</p>
 
-          <label class="check span2"><input id="informed" type="checkbox" required><span>I confirm students have been informed of the purpose, signals collected, and consent process.</span></label>
-          <div class="span2 actions"><button type="submit">Create session</button><span id="create-result" class="muted"></span></div>
+          <label class="check span2" style="margin-top:20px"><input id="informed" type="checkbox" required><span>I confirm students have been told what SEEge collects and how they consent.</span></label>
+          <div class="span2 actions" style="margin-top:16px"><button type="submit">Create session</button><span id="create-result" class="muted"></span></div>
         </form>
       </section>
 
       <!-- Empty state -->
       <section id="empty" class="card empty hidden">
         <h2>No session selected</h2>
-        <p class="muted">Pick a session from the list, or create a new one to start tracking attendance.</p>
+        <p class="muted">Pick a session from the list, or create one to start taking attendance.</p>
       </section>
 
       <!-- Selected session -->
-      <section id="selected" class="hidden" style="display:flex;flex-direction:column;gap:16px">
-        <section class="card">
+      <section id="selected" class="hidden" style="display:flex;flex-direction:column;gap:18px">
+        <section class="card session-head">
           <div class="card-head">
             <div><h2><span id="session-title">Session</span> <span id="session-status" class="pill"></span></h2><div id="session-meta" class="muted"></div></div>
             <div class="actions"><button id="email">Email report</button><button id="csv" class="secondary">Download CSV</button><button id="end-session" class="danger">End class now</button></div>
@@ -172,7 +185,7 @@
 
         <section class="grid" id="summary"></section>
 
-        <section class="card charts"><div><h3>Attendance breakdown</h3><div class="donut" id="donut"><span id="donut-label"></span></div><p class="muted" id="legend"></p></div><div><h3>Focus score distribution</h3><div id="focus-bars" class="bars"></div><p class="muted">Scores: 0–19, 20–39, 40–59, 60–79, 80–100</p></div></section>
+        <section class="card charts"><div><h3>Attendance breakdown</h3><div class="donut" id="donut"><span id="donut-label"></span></div><p class="muted" id="legend"></p></div><div><h3>Focus score distribution</h3><div id="focus-bars" class="bars"></div><p class="muted">Number of students in each focus score band.</p></div></section>
 
         <section class="card">
           <div class="card-head"><h2>Students</h2><div class="toolbar"><input id="search" placeholder="Search name or email" aria-label="Search students"><select id="status-filter" aria-label="Filter by status"><option value="all">All statuses</option><option>Present</option><option>Late</option><option>Partial</option><option>Absent</option><option>Upcoming</option></select></div></div>
@@ -182,29 +195,29 @@
         <section class="two">
           <section class="card">
             <h2>Roster</h2>
-            <p class="muted">Students must be listed here by their Google email, or they won't be tracked. <span id="roster-count"></span></p>
+            <p class="muted" style="margin-top:4px">Students must be listed by their Google email, or SEEge will not track them. <span id="roster-count"></span></p>
             <ul id="roster-list" class="rosterlist"></ul>
             <form id="roster-form" class="formgrid">
               <h3>Add or change students</h3>
               <div class="span2"><label for="roster-text-edit">Paste CSV: name,email</label><textarea id="roster-text-edit" rows="3" placeholder="name,email&#10;Alex Student,alex@example.com"></textarea></div>
               <div><label for="roster-file-edit">Or upload a CSV file</label><input id="roster-file-edit" type="file" accept=".csv,text/csv"></div>
               <div><label for="roster-mode">Import mode</label><select id="roster-mode"><option value="merge">Add or update entries</option><option value="replace">Replace roster (removes others and their data)</option></select></div>
-              <div class="span2 actions" style="margin-top:10px"><button type="submit">Save roster changes</button><span id="roster-result" class="muted"></span></div>
+              <div class="span2 actions" style="margin-top:14px"><button type="submit">Save roster changes</button><span id="roster-result" class="muted"></span></div>
             </form>
           </section>
 
           <section class="card">
             <h2>Class timing</h2>
-            <p class="muted">Correct the actual end time if the class ended earlier than scheduled.</p>
+            <p class="muted" style="margin-top:4px">If the class ended earlier than scheduled, set the real end time.</p>
             <label for="actual-end">Actual end time</label>
             <input id="actual-end" type="datetime-local">
-            <div class="actions" style="margin-top:10px"><button id="save-end" class="secondary">Save end time</button></div>
-            <p id="signals" class="muted"></p>
-            <details><summary>How scores are calculated</summary><div id="formula" class="notice"></div></details>
+            <div class="actions" style="margin-top:12px"><button id="save-end" class="secondary">Save end time</button></div>
+            <p id="signals" class="muted" style="margin-top:12px"></p>
+            <details style="margin-top:14px"><summary>How scores are calculated</summary><div id="formula" class="notice"></div></details>
           </section>
         </section>
 
-        <section class="card"><h2>Student data deletion requests</h2><div id="deletion-requests" class="muted">No requests loaded.</div></section>
+        <section class="card"><h2>Student data deletion requests</h2><div id="deletion-requests" class="muted" style="margin-top:8px">No requests loaded.</div></section>
       </section>
     </div>
   </div>
